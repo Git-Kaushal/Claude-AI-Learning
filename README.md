@@ -50,4 +50,4 @@ This sample edition is licensed under [CC BY-NC-ND 4.0](https://creativecommons.
 
 1. Create the repository (public) and upload every file in this folder to the root.
 2. Settings → Pages → Build and deployment → **Deploy from a branch** → branch `main`, folder `/ (root)` → Save.
-3. After a minute the site is at `https://git-kaushal.github.io/<repository-name>/`.
+3. After a minute the site is at `https://git-kaushal.github.io/<Claude-AI-Learning>/`.
