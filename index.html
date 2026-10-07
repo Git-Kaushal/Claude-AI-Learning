@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Working with Claude (Sample)</title>
+<style>
+:root{--bg:#fff8f1;--panel:#fff;--ink:#24170c;--muted:#76604e;--line:#f1dcc8;--brand:#ea580c;--soft:#fff1e3;
+  --top:linear-gradient(100deg,#ea580c 0%,#f59e0b 55%,#f97316 100%);--canvas:#fffdfb;--ok:#15803d;--no:#b91c1c;--shadow:0 2px 10px rgba(120,60,10,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#15110e;--panel:#1f1914;--ink:#f6ece3;--muted:#b9a593;--line:#3a2e25;--brand:#fb923c;--soft:#2a2019;
+  --top:linear-gradient(100deg,#c2410c 0%,#d97706 60%,#ea580c 100%);--canvas:#f8f4ef;--ok:#4ade80;--no:#f87171;--shadow:0 2px 10px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--c,var(--brand))}
+.top{background:var(--top);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top .logo{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex:none}
+.top h1{margin:0;font-size:19px;flex:1;min-width:180px;cursor:pointer}
+.top h1 small{display:block;font-weight:400;font-size:12.5px;opacity:.93}
+.top a.out{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.6);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14px;white-space:nowrap}
+.sample{background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:7px 14px;font-size:13px;text-align:center}
+main{flex:1;width:100%;max-width:1120px;margin:0 auto;padding:14px 16px 32px}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:14px}
+.crumbs a{text-decoration:none;font-weight:600;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 14%,var(--panel));color:color-mix(in srgb,var(--c) 85%,var(--ink));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}
+.crumbs span.sep{color:var(--muted)}
+.hero{border-radius:16px;padding:18px 18px 16px;color:#fff;background:linear-gradient(120deg,var(--c),var(--c2,var(--c)));box-shadow:var(--shadow);margin-bottom:16px}
+.hero h2{margin:0 0 4px;font-size:22px}
+.hero p{margin:0;opacity:.95}
+.hero .chips{margin-top:10px}
+.chip{display:inline-block;font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 10px;margin:2px 4px 2px 0;background:rgba(255,255,255,.22)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;gap:6px;text-align:left;text-decoration:none;color:var(--ink);background:color-mix(in srgb,var(--c) 8%,var(--panel));border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));border-top:6px solid var(--c);border-radius:14px;padding:14px;cursor:pointer;box-shadow:var(--shadow);transition:transform .12s,box-shadow .12s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px color-mix(in srgb,var(--c) 30%,transparent)}
+.card h3{margin:0;font-size:17px;color:color-mix(in srgb,var(--c) 82%,var(--ink))}
+.card .k{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c)}
+.card p{margin:0;font-size:14px;color:var(--muted)}
+.card .meta{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;background:color-mix(in srgb,var(--c) 16%,var(--panel));color:color-mix(in srgb,var(--c) 80%,var(--ink))}
+.card.lock{opacity:.78;cursor:default}
+.card.lock:hover{transform:none;box-shadow:var(--shadow)}
+.big .card{min-height:150px}
+.big .card h3{font-size:21px}
+.cls{font-size:44px;font-weight:800;line-height:1;color:var(--c)}
+.sec{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.sec>h3{margin:0 0 10px;font-size:17px;display:flex;align-items:center;gap:8px;color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+.sec>h3 .n{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;align-items:center;justify-content:center;flex:none}
+@media (prefers-color-scheme:dark){.sec>h3 .n,.btn.p,.hero{color:#fff}}
+ul.lo{margin:0;padding-left:20px}ul.lo li{margin:3px 0}
+.topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.topic{border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--c) 6%,var(--panel));padding:0}
+.topic summary{cursor:pointer;padding:9px 12px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:flex-start}
+.topic summary::-webkit-details-marker{display:none}
+.topic summary::before{content:"+";flex:none;width:20px;height:20px;border-radius:6px;background:var(--c);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.topic[open] summary::before{content:"−"}
+.topic div{padding:0 12px 10px 40px;font-size:14px}
+.btn{text-decoration:none;display:inline-block;border:1px solid color-mix(in srgb,var(--c,var(--brand)) 45%,var(--line));background:var(--panel);border-radius:10px;padding:7px 14px;cursor:pointer;font-weight:600;color:color-mix(in srgb,var(--c,var(--brand)) 85%,var(--ink))}
+.btn:hover{background:color-mix(in srgb,var(--c,var(--brand)) 10%,var(--panel))}
+.btn.p{background:var(--c,var(--brand));border-color:var(--c,var(--brand));color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mut{color:var(--muted);font-size:13.5px}
+.okc{color:var(--ok);font-weight:700}.noc{color:var(--no);font-weight:700}
+.links a{display:inline-block;margin:3px 8px 3px 0;font-size:14px}
+/* sort / order */
+.pool{display:flex;flex-wrap:wrap;gap:6px;min-height:42px;padding:8px;border:1px dashed color-mix(in srgb,var(--c) 40%,var(--line));border-radius:10px;margin-bottom:10px}
+.it{border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));background:var(--panel);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+.it.sel{background:var(--c);color:#fff;border-color:var(--c)}
+.it.good{background:color-mix(in srgb,var(--ok) 18%,var(--panel));border-color:var(--ok)}
+.it.bad{background:color-mix(in srgb,var(--no) 18%,var(--panel));border-color:var(--no)}
+.buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.bucket{border:2px solid color-mix(in srgb,var(--bc) 55%,var(--line));background:color-mix(in srgb,var(--bc) 8%,var(--panel));border-radius:12px;padding:8px;min-height:90px;cursor:pointer}
+.bucket b{display:block;color:color-mix(in srgb,var(--bc) 85%,var(--ink));margin-bottom:6px;font-size:14px}
+.bucket .it{display:inline-block;margin:2px}
+.seq{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:42px;margin:8px 0}
+.seq .it::before{content:attr(data-n);display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;align-items:center;justify-content:center;margin-right:6px}
+/* quiz */
+.qcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:color-mix(in srgb,var(--c) 4%,var(--panel))}
+.qcard .qn{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.qcard .q{font-weight:600;margin-bottom:8px}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer}
+.opt:hover{border-color:var(--c)}
+.opt.right{background:color-mix(in srgb,var(--ok) 20%,var(--panel));border-color:var(--ok)}
+.opt.wrong{background:color-mix(in srgb,var(--no) 18%,var(--panel));border-color:var(--no)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0 10px}
+.bar i{display:block;height:100%;background:var(--c)}
+/* tables */
+.tw{overflow-x:auto;margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:center;white-space:nowrap}
+th{background:color-mix(in srgb,var(--c,var(--brand)) 12%,var(--panel))}
+td.l,th.l{text-align:left;white-space:normal}
+/* widgets */
+.wbox{border:1px solid color-mix(in srgb,var(--c) 25%,var(--line));border-radius:12px;padding:12px;background:var(--panel);margin:8px 0}
+.wbox h4{margin:0 0 8px;font-size:15px;color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+label.f{display:block;font-size:14px;margin:6px 0}
+label.f span{display:block;margin-bottom:3px;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--c,var(--brand))}
+input[type=text],input[type=number],textarea,select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+textarea{min-height:80px;resize:vertical}
+pre.code{background:#1e1b2e;color:#f4f1ff;border-radius:10px;padding:12px;overflow-x:auto;font:13px/1.5 ui-monospace,Consolas,Menlo,monospace;margin:6px 0;user-select:text}
+pre.code .kw{color:#f9a8d4}pre.code .st{color:#a7f3d0}pre.code .nu{color:#fcd34d}pre.code .cm{color:#94a3b8}pre.code .fn{color:#93c5fd}
+pre.out{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 12px;overflow-x:auto;font:13px/1.45 ui-monospace,Consolas,Menlo,monospace;margin:6px 0;min-height:40px;white-space:pre}
+.cv{background:var(--canvas);border-radius:10px;border:1px solid var(--line);display:block;max-width:100%}
+.mat{display:inline-grid;gap:2px;margin:4px 0}
+.mat div{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:4px;font-variant-numeric:tabular-nums}
+.mat input{width:54px;padding:4px;text-align:center}
+.cm input{background:#fff;color:#111;width:70px}
+.hl{outline:3px solid #f43f5e;outline-offset:-2px}
+.calc{font:13px/1.6 ui-monospace,Consolas,monospace;background:var(--soft);border-radius:8px;padding:8px 10px;overflow-x:auto}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;max-width:360px}
+.cm div{border-radius:8px;padding:8px;text-align:center;font-weight:700}
+.cm .h{background:transparent;font-weight:600;font-size:13px;color:var(--muted)}
+.tp{background:#dcfce7;color:#14532d}.tn{background:#dbeafe;color:#1e3a8a}.fp{background:#fee2e2;color:#7f1d1d}.fn{background:#fef3c7;color:#78350f}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:8px 0}
+.kpi{border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--c) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+.kpi b{display:block;font-size:20px;color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tabs button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 13px;cursor:pointer;font-weight:600;font-size:14px}
+.tabs button.on{background:var(--c);border-color:var(--c);color:#fff}
+.plist{display:flex;flex-direction:column;gap:4px;max-height:520px;overflow:auto}
+.plist button{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:13.5px;display:flex;gap:8px}
+.plist button b{color:var(--c);min-width:28px}
+.plist button.on{background:color-mix(in srgb,var(--c) 15%,var(--panel));border-color:var(--c)}
+.plist button .tick{margin-left:auto;color:var(--ok)}
+.check li{list-style:none;margin:4px 0}
+.check{padding-left:0;margin:0}
+.check label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--c)}
+details.viva{border-bottom:1px solid var(--line);padding:6px 0}
+details.viva summary{cursor:pointer;font-weight:600;color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+details.viva p{margin:6px 0 2px}
+.lockbox{border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted)}
+/* mind map */
+.mmwrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--canvas);max-height:76vh}
+.mmwrap svg text{font:12.5px system-ui,sans-serif}
+.mmnode{cursor:pointer}
+footer{padding:14px;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line);background:var(--panel)}
+footer b{color:var(--ink)}
+@media (max-width:600px){main{padding:12px 12px 26px}.top h1{font-size:17px}.hero h2{font-size:19px}.cls{font-size:36px}}
+@media print{html{display:none!important}}
+
+/* polished teacher-training landing page */
+.landing{font-size:16px;line-height:1.6}
+.landing section[id]{scroll-margin-top:18px}
+.landing-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.55fr);gap:22px;align-items:center;border-radius:22px;padding:34px 34px 30px;margin-bottom:16px;background:linear-gradient(125deg,#c2410c 0%,#ea580c 42%,#db2777 100%);color:#fff;box-shadow:0 12px 34px rgba(120,60,10,.18)}
+.landing-hero:after{content:"";position:absolute;width:290px;height:290px;border-radius:50%;right:-120px;top:-145px;background:rgba(255,255,255,.10)}
+.landing-hero .eyebrow,.section-kicker{display:block;font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.landing-hero .eyebrow{opacity:.92;margin-bottom:7px}
+.landing-hero h2{font-size:36px;line-height:1.12;margin:0 0 12px;max-width:760px}
+.landing-hero .lead{font-size:18px;line-height:1.58;margin:0;max-width:760px;opacity:.97}
+.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;align-items:center}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:46px;border-radius:11px;padding:10px 18px;text-decoration:none;font-weight:800;border:1px solid rgba(255,255,255,.7)}
+.cta.primary{background:#fff;color:#9a3412;border-color:#fff}
+.cta.secondary{background:rgba(255,255,255,.12);color:#fff}
+.cta:hover{transform:translateY(-1px)}
+.hero-note{font-size:13px;opacity:.9;margin-top:12px}
+.hero-stats{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.hero-stat{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);backdrop-filter:blur(4px);border-radius:14px;padding:13px 12px}
+.hero-stat b{display:block;font-size:23px;line-height:1.1}.hero-stat span{font-size:12.5px;opacity:.94}
+.landing-nav{display:flex;gap:6px;flex-wrap:wrap;padding:9px;background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:0 0 18px;box-shadow:var(--shadow)}
+.landing-nav button{border:0;background:transparent;color:var(--ink);font-weight:700;font-size:13.5px;border-radius:9px;padding:8px 11px;cursor:pointer}
+.landing-nav button:hover,.landing-nav button:focus-visible{background:var(--soft);outline:none}
+.land-section{margin:0 0 18px;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.land-section.tint{background:linear-gradient(135deg,color-mix(in srgb,#ea580c 5%,var(--panel)),color-mix(in srgb,#db2777 4%,var(--panel)))}
+.land-section h2{font-size:25px;line-height:1.2;margin:3px 0 8px}.land-section>p{margin:0;color:var(--muted);max-width:900px}
+.section-kicker{color:#c2410c}
+.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.info-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--panel)}
+.info-card .ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--soft);font-size:20px;margin-bottom:10px}
+.info-card h3{font-size:17px;margin:0 0 5px}.info-card p{font-size:14.5px;color:var(--muted);margin:0}
+.why-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:15px;align-items:start}
+.reason-list{display:grid;gap:9px}.reason{display:flex;gap:10px;align-items:flex-start}.reason .tick{flex:none;width:24px;height:24px;border-radius:50%;background:color-mix(in srgb,#15803d 14%,var(--panel));color:var(--ok);font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:1px}.reason p{margin:0;font-size:15px}
+.goal-box{border-radius:15px;padding:18px;background:linear-gradient(135deg,color-mix(in srgb,#7c3aed 10%,var(--panel)),color-mix(in srgb,#2563eb 8%,var(--panel)));border:1px solid color-mix(in srgb,#7c3aed 24%,var(--line))}.goal-box b{font-size:17px}.goal-box p{margin:6px 0 0;color:var(--muted)}
+.trainer{display:grid;grid-template-columns:90px minmax(0,1fr);gap:18px;align-items:center;margin-top:14px}.trainer-avatar{width:90px;height:90px;border-radius:22px;background:linear-gradient(135deg,#ea580c,#db2777);color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;font-weight:900;box-shadow:var(--shadow)}.trainer h3{font-size:22px;margin:0 0 2px}.trainer .role{font-size:14px;font-weight:700;color:#c2410c;margin-bottom:7px}.trainer p{margin:0;color:var(--muted)}
+.explore-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.explore-card{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);border:1px solid color-mix(in srgb,var(--ec) 28%,var(--line));border-top:5px solid var(--ec);background:color-mix(in srgb,var(--ec) 5%,var(--panel));border-radius:15px;padding:17px;min-height:180px;transition:transform .12s,box-shadow .12s}.explore-card:hover{transform:translateY(-2px);box-shadow:0 7px 20px color-mix(in srgb,var(--ec) 20%,transparent)}.explore-card .ico{font-size:26px}.explore-card h3{margin:8px 0 5px;font-size:18px;color:color-mix(in srgb,var(--ec) 82%,var(--ink))}.explore-card p{margin:0;color:var(--muted);font-size:14.5px}.explore-card .go{margin-top:auto;padding-top:12px;font-weight:800;color:var(--ec);font-size:14px}
+.journey{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:17px}.journey-step{position:relative;border:1px solid var(--line);border-radius:13px;padding:13px 11px;background:var(--panel);min-height:132px}.journey-step .num{width:27px;height:27px;border-radius:8px;background:#ea580c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin-bottom:8px}.journey-step b{display:block;font-size:15px}.journey-step span:last-child{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45}
+.start-band{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;border-radius:18px;padding:22px 24px;margin:0 0 18px;background:linear-gradient(120deg,#fff7ed,color-mix(in srgb,#fce7f3 65%,var(--panel)));border:1px solid color-mix(in srgb,#ea580c 28%,var(--line));box-shadow:var(--shadow)}
+@media (prefers-color-scheme:dark){.start-band{background:linear-gradient(120deg,#2a2019,#2a1822)}}
+.start-band h2{margin:0 0 5px;font-size:23px}.start-band p{margin:0;color:var(--muted)}.start-band .btn{min-height:44px;display:inline-flex;align-items:center}
+.sample-open{margin-bottom:16px}.sample-open h2,.pathway-head h2{font-size:24px;margin:0 0 5px}.sample-open>p,.pathway-head p{margin:0 0 12px;color:var(--muted)}
+.pathway-head{margin:22px 0 12px}.programme-preview{border:1px solid var(--line);border-radius:16px;background:var(--panel);margin-bottom:16px;overflow:hidden}.programme-preview>summary{list-style:none;cursor:pointer;padding:16px 18px;font-weight:800;display:flex;justify-content:space-between;gap:12px;align-items:center}.programme-preview>summary::-webkit-details-marker{display:none}.programme-preview>summary:after{content:"+";font-size:20px;color:#ea580c}.programme-preview[open]>summary:after{content:"−"}.programme-preview .preview-body{padding:0 12px 2px}
+.participant-note{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--muted);font-size:13.5px}.participant-note b{color:var(--ink)}
+.landing a:focus-visible,.landing button:focus-visible{outline:3px solid color-mix(in srgb,#2563eb 55%,transparent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.cta,.explore-card,.card{transition:none!important}.cta:hover,.explore-card:hover,.card:hover{transform:none!important}}
+@media (max-width:900px){.landing-hero{grid-template-columns:1fr}.hero-stats{grid-template-columns:repeat(4,1fr)}.why-grid{grid-template-columns:1fr}.journey{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.landing-hero{padding:25px 20px}.landing-hero h2{font-size:29px}.landing-hero .lead{font-size:16px}.hero-stats{grid-template-columns:1fr 1fr}.land-section{padding:19px 16px}.info-grid,.explore-grid{grid-template-columns:1fr}.journey{grid-template-columns:1fr 1fr}.trainer{grid-template-columns:70px 1fr}.trainer-avatar{width:70px;height:70px;border-radius:18px;font-size:25px}.start-band{grid-template-columns:1fr}.start-band .btn{width:100%;justify-content:center}}
+@media (max-width:430px){.journey{grid-template-columns:1fr}.landing-nav{display:grid;grid-template-columns:1fr 1fr}.landing-nav button{text-align:left}}
+
+
+.hero.dash .k{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.9;margin-bottom:4px}
+.hero.dash h2{font-size:26px}
+.tools{margin-bottom:18px}
+.track{border-radius:16px;padding:12px;margin:0 0 16px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 10%,var(--panel)),color-mix(in srgb,var(--c2) 8%,var(--panel)));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+.track .th{display:flex;gap:12px;align-items:center;margin:2px 4px 12px}
+.track .th h3{margin:0;font-size:19px;color:color-mix(in srgb,var(--c) 85%,var(--ink))}
+.track .th p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.track .tn{flex:none;width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+.cc{display:inline-flex;align-items:center;justify-content:center;min-width:30px;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 7px;background:var(--k);color:#fff}
+.card .arrow{color:var(--muted);font-weight:700}
+.maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.mapc{display:flex;gap:10px;align-items:flex-start;text-decoration:none;color:var(--ink);border:1px solid color-mix(in srgb,var(--k) 35%,var(--line));border-left:5px solid var(--k);border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--k) 6%,var(--panel))}
+a.mapc:hover{background:color-mix(in srgb,var(--k) 14%,var(--panel))}
+.mapc .cl,.rung .cl{flex:none;min-width:40px;height:30px;border-radius:8px;background:var(--k);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0 5px}
+.mapc b{color:color-mix(in srgb,var(--k) 80%,var(--ink));font-size:14px}
+.mapc p,.rung p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.plan .step{border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--c) 6%,var(--panel))}
+.plan .mn{float:right;font-weight:800;color:var(--c)}
+.plan p{margin:4px 0 0;font-size:13.5px}
+.tl{display:flex;height:10px;border-radius:99px;overflow:hidden;margin-top:10px;gap:2px}
+.myths{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.myth{border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.myth p{margin:0;padding:8px 10px;font-size:14px}
+.myth .x{background:color-mix(in srgb,var(--no) 10%,var(--panel))}
+.myth .y{background:color-mix(in srgb,var(--ok) 10%,var(--panel))}
+.ladder{position:relative;display:flex;flex-direction:column;gap:8px;padding-left:4px}
+.rung{display:flex;gap:10px;align-items:flex-start;border:1px solid color-mix(in srgb,var(--k) 35%,var(--line));border-left:5px solid var(--k);border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--k) 6%,var(--panel))}
+.rung b{font-size:13px;color:color-mix(in srgb,var(--k) 80%,var(--ink))}
+.rung p{color:var(--ink);font-size:14.5px}
+table.lad td{vertical-align:top;font-size:13px}
+.pgb{margin-top:12px;max-width:520px}.pgb .pgt{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;font-size:13.5px}.pgb .pgt span{opacity:.9}
+.pgb .bar{background:rgba(255,255,255,.3);margin:6px 0 0}.pgb .bar i{background:#fff}
+.pill.done{background:color-mix(in srgb,var(--ok) 18%,var(--panel));color:var(--ok)}
+.final{border-radius:16px;padding:12px;margin:0 0 16px;border:2px dashed color-mix(in srgb,#0891b2 45%,var(--line));background:color-mix(in srgb,#0891b2 6%,var(--panel))}
+.final.open{border-style:solid;border-color:#0d9488;background:linear-gradient(135deg,color-mix(in srgb,#0891b2 12%,var(--panel)),color-mix(in srgb,#0d9488 10%,var(--panel)))}
+.final .fh{display:flex;gap:12px;align-items:center;margin:2px 4px 12px}
+.final .fh .k{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#0e7490}
+.final .fh h3{margin:2px 0;font-size:19px;color:color-mix(in srgb,#0e7490 85%,var(--ink))}
+.final .fh p{margin:0;font-size:13.5px;color:var(--muted)}
+.final .tn{flex:none;width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#0891b2,#0d9488);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+@media (max-width:600px){.hero.dash h2{font-size:21px}.track{padding:10px 8px}}
+
+.track.shut{opacity:.86}
+.ucards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ucards>div{border:1px solid color-mix(in srgb,var(--c) 28%,var(--line));border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--c) 6%,var(--panel))}
+.ucards .k,.rec .k{display:block;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--c)}
+.ucards p{margin:4px 0 0;font-size:14.5px}
+ol.steps{margin:0;padding-left:22px}ol.steps li{margin:6px 0}ol.steps label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}ol.steps input{margin-top:5px;accent-color:var(--c)}
+.pcard{border:1px solid color-mix(in srgb,var(--c,#2563eb) 30%,var(--line));border-radius:12px;padding:10px 12px;margin:0 0 12px;background:var(--panel)}
+.pcard .ph{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}
+.pcard details summary{cursor:pointer;font-weight:600;font-size:14px;margin:4px 0}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 10px}
+.ptxt{min-height:96px;font-size:14px;margin:6px 0}
+.pcard p.mut{margin:6px 0 0}
+.qpick{margin:0 0 10px}.qpick b{display:block;margin-bottom:6px}
+.rec{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--soft);margin-top:8px}.rec h4{margin:2px 0 6px}
+.shopg{display:flex;flex-wrap:wrap;gap:6px}.shopg .it b{margin-left:4px}
+table.feat td,table.feat th{white-space:normal}table.feat td{vertical-align:top}.part{color:#d97706;font-weight:800}
+@media (max-width:760px){.ucards{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="sample"><b>Sample edition</b>: a showcase of Working with Claude by Kaushal J (Week 1 of 4, 2 of 4 studio tools).</div>
+<header class="top">
+  <div class="logo"><svg viewBox="0 0 32 32" width="28" height="28"><circle cx="16" cy="16" r="6" fill="#fff"/><g stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M16 3v5M16 24v5M3 16h5M24 16h5M6.8 6.8l3.5 3.5M21.7 21.7l3.5 3.5M6.8 25.2l3.5-3.5M21.7 10.3l3.5-3.5"/></g></svg></div>
+  <h1 id="home">Working with Claude<small>A 4-week course · prompting, artifacts, customization and responsible use</small></h1>
+  <a class="out" href="#/C/library">Prompt Library</a>
+</header>
+<main id="app"></main>
+<footer>
+  Working with Claude &mdash; a 4-week course for educators and professionals<br>
+  Original instructional design &amp; content by <b>Kaushal J</b> &middot; Education Strategist &middot; AI in Education &middot; © 2026 Kaushal J. Sample edition.<br>
+  <span style="font-size:12px">Based on the Claude Help Center (support.claude.com, checked October 2026). Claude is a product of Anthropic; this independent course is not affiliated with or endorsed by Anthropic. Tool links open external websites.</span>
+</footer>
+<script>
+const DATA = {"sample": true, "single": "C", "classes": [{"id": "C", "name": "Working with Claude", "kicker": "4-week course", "c": "#ea580c", "c2": "#db2777", "active": true, "desc": "", "tags": []}], "C": {"C": {"title": "Working with Claude: a 4-week course", "summary": "", "chips": [], "mapTitle": "Working with Claude: 4-week course", "parts": [{"id": "W1", "short": "Week 1", "kicker": "Week 1 · 3 lessons · 5 h", "title": "Week 1: STEM and technical fields", "theme": "Foundations: prompting, files and artifacts", "c": "#2563eb", "c2": "#0891b2", "desc": "Simplify concepts, generate problem sets as real files, and build interactive tools with artifacts.", "pills": ["Step 1", "Step 2", "Step 3"], "units": [{"id": "w1s1", "code": "W1 · Step 1", "title": "Simplify complex concepts with clear prompts", "hours": 1.5, "subject": "STEM: concept simplification", "feature": "Chatting and prompting well", "help": "help", "outcomes": ["Write a prompt with role, task, audience, context, format and constraints.", "Iterate on a reply with specific follow-ups instead of starting again.", "Check AI explanations for accuracy before using them."], "use": "Generate a jargon-free explanation of a difficult concept (e.g. entropy, opportunity cost, statistical significance) using one analogy.", "activity": "Pick a concept from your own course or work, write a prompt to simplify it for a named audience, then edit the output until you would put your name on it.", "impact": "Learners and colleagues get clearer, story-based explanations that improve understanding without dumbing the idea down.", "steps": ["Open a new chat in Claude (web, desktop or mobile).", "Type a prompt that names the audience, the concept, one analogy source, a word limit and the format you want.", "Read the reply and mark anything inaccurate, vague or too long.", "Reply with one specific change at a time (e.g. \"shorter\", \"use a sports analogy\", \"add a check question\").", "Use the edit (pencil) on your own earlier message to branch and compare two versions of the prompt.", "Copy the final explanation into your notes and record which prompt produced it."], "topics": [["Prompt anatomy", "A strong prompt states the role, the task, the audience, the context, the output format and any constraints such as length or tone."], ["Iteration", "Treat the first answer as a draft. Ask for one specific change per follow-up rather than rewriting the whole request."], ["Audience calibration", "Naming the audience and their prior knowledge changes vocabulary, examples and depth more than any other single instruction."], ["Analogy check", "An analogy helps only if it maps the key relationship correctly; ask where the analogy breaks down."], ["Verification", "Fluent text can still be wrong. Check definitions, numbers and claims against a trusted source before teaching or publishing."]], "pitfalls": [["Writing one vague line and accepting the first answer.", "Add audience, format and limits, then iterate with targeted follow-ups."], ["Asking for \"simple\" without saying for whom.", "Name the audience and what they already know."], ["Trusting a confident tone.", "Ask Claude to list which statements a specialist might dispute, then check them."]], "prompts": ["p1", "p2"], "activities": [{"type": "widget", "name": "pbuild", "title": "Prompt builder"}, {"type": "order", "title": "Order the prompting workflow", "hint": "Tap the steps in a sensible order.", "items": ["State audience, task and format", "Read and mark problems", "Ask for one specific change", "Verify facts against a source", "Save the prompt that worked"]}], "quiz": [["Which addition usually improves an explanation the most?", ["Asking Claude to be smart", "Naming the audience and what they already know", "Using capital letters", "Adding \"please\" twice"], 1, "Audience and prior knowledge drive vocabulary and depth."], ["The first reply is too long. The best next step is to", ["start a new chat", "reply with a specific change such as \"cut to 80 words\"", "accept it", "paste the same prompt again"], 1, "Targeted follow-ups refine a draft efficiently."], ["Why ask where an analogy breaks down?", ["To make the answer longer", "Because analogies can mislead if they map the wrong relationship", "It is required by Claude", "To avoid citations"], 1, "Every analogy has limits; knowing them prevents misconceptions."], ["Before using an AI explanation in class or a report you should", ["check its claims against a trusted source", "remove the analogy", "translate it", "nothing"], 0, "Fluency is not accuracy."], ["Editing your own earlier message in a chat lets you", ["delete Claude", "branch and compare a different version of the prompt", "publish the chat", "turn on memory"], 1, "Editing a prompt creates a new branch of the conversation."]], "c": "#2563eb"}, {"id": "w1s2", "code": "W1 · Step 2", "title": "Generate problem sets and files with answer keys", "hours": 1.5, "subject": "STEM: quantitative problems", "feature": "Code execution and file creation (Excel, Word, PowerPoint, PDF)", "help": "files", "outcomes": ["Ask Claude to create a downloadable Excel, Word, PowerPoint or PDF file.", "Use calculated answer keys and check them yourself.", "Upload a data file and ask Claude to analyse or extend it."], "use": "Generate themed, level-appropriate problem sets (finance, dosage, statistics, engineering loads) with a worked answer key.", "activity": "Create a 10-problem set for your own course or team training, delivered as an Excel file with formulas, and check three answers by hand.", "impact": "Learners practise with relevant, realistic problems instead of abstract drills, and answer keys are consistent.", "steps": ["Check that Code execution and file creation is on: Settings → Capabilities.", "Describe the file you want, naming the format: \"Create an Excel file with …\".", "Ask for answers to be calculated by formula, not typed in, so they update if inputs change.", "Open the file from the chat (or save it to Google Drive) and check at least three answers yourself.", "Upload a CSV or spreadsheet of your own and ask Claude to add a summary sheet or chart.", "Ask for the same content as a Word or PDF handout if learners need a printable version."], "topics": [["File creation", "With code execution turned on, Claude can create and edit Excel, Word, PowerPoint and PDF files and offer them for download."], ["Capabilities setting", "Code execution and file creation is switched on or off under Settings → Capabilities; organisations can control it for Team and Enterprise plans."], ["Formula-based keys", "Answers calculated by spreadsheet formulas update automatically when a value changes, which reduces copying errors."], ["Uploading data", "You can upload CSV, spreadsheet and other data files for Claude to analyse, clean, chart or turn into new documents."], ["Human check", "Always recompute a sample of answers yourself; a wrong formula produces confident wrong numbers."]], "pitfalls": [["Not saying which file type you need.", "Name the format: Excel, Word, PowerPoint or PDF."], ["Typed-in answers that drift from the questions.", "Ask for formula-calculated answers."], ["Skipping the check.", "Recalculate at least three answers by hand."]], "prompts": ["p3"], "activities": [{"type": "sort", "title": "Which output format fits?", "hint": "Sort each request to the most suitable format.", "buckets": ["Excel (.xlsx)", "Word (.docx)", "PowerPoint (.pptx)", "PDF"], "items": [["A budget model with formulas", 0], ["A grade calculator learners can reuse", 0], ["An editable handout for colleagues", 1], ["A policy draft with tracked changes", 1], ["A 10-slide briefing", 2], ["Lecture slides with speaker notes", 2], ["A fixed, printable exam paper", 3], ["A certificate that must not change", 3]]}], "quiz": [["Where do you turn on file creation in Claude?", ["Settings → Capabilities", "Projects → Knowledge", "The artifact Share menu", "Memory"], 0, "Code execution and file creation lives under Capabilities."], ["Why ask for answers calculated by formula?", ["They look better", "They stay correct when inputs change", "Claude requires it", "It makes the file smaller"], 1, "Formulas recalculate automatically."], ["Which is NOT a format Claude can create with file creation?", ["Excel", "Word", "PowerPoint", "A physical printed book"], 3, "Claude creates digital files."], ["After receiving a problem-set file you should", ["check a sample of answers yourself", "publish it immediately", "delete the formulas", "convert it to an image"], 0, "A wrong formula can produce confident wrong answers."], ["You have a CSV of survey results. Claude can", ["only read the file name", "analyse it and create a summary sheet or chart", "not open CSV files", "only translate it"], 1, "Uploaded data files can be analysed and transformed."]], "c": "#0891b2"}, {"id": "w1s3", "code": "W1 · Step 3", "title": "Build interactive tools with artifacts", "hours": 2, "subject": "Engineering & technology: hands-on challenges", "feature": "Artifacts: create, iterate, versions", "help": "artifacts", "outcomes": ["Explain what an artifact is and when Claude creates one.", "Iterate on an artifact by conversation and switch between versions.", "Build a small interactive tool that supports a hands-on challenge."], "use": "Draft a safe, low-cost design challenge (e.g. a paper bridge, a process-improvement sprint, a data-cleaning race) with step-by-step instructions.", "activity": "Ask Claude for the challenge brief, then for an interactive artifact (calculator or simulator) that participants use to test their designs.", "impact": "Participants practise problem solving and design thinking with instant feedback from a tool built in minutes.", "steps": ["Ask Claude for the challenge brief: goal, constraints, materials, steps, one safety note and success measures.", "Ask: \"Build this as an interactive artifact where participants enter their values and see the result.\" The artifact opens in a side panel.", "Try the tool. Ask for one change at a time (add a chart, a reset button, clearer labels).", "Use the version selector on the artifact to compare an earlier version with the latest one.", "Ask Claude to explain any formula the tool uses, and test it with values whose answer you already know.", "Keep the final version open; you will share or publish it in Week 2."], "topics": [["Artifact", "An artifact is something Claude makes for you that you would put in front of someone: a document, deck, design, dashboard or interactive tool, shown in a side panel."], ["Iterating an artifact", "You change an artifact by asking for edits in the chat; Claude updates it and keeps earlier versions."], ["Versions", "Each update creates a new version, and you can go back to an earlier one if a change made things worse."], ["Interactive tools", "Artifacts can be small working apps such as calculators, simulators, quizzes and trackers that run in the browser."], ["Testing with known answers", "Check a tool with inputs whose correct output you already know before giving it to others."]], "pitfalls": [["Asking for everything in one message.", "Build the core first, then add features one at a time."], ["Losing a good version after a bad edit.", "Use the version selector to return to it."], ["Trusting the tool’s maths.", "Test it with values whose answer you know."]], "prompts": ["p4"], "activities": [{"type": "widget", "name": "artpick", "title": "Which kind of artifact or file?"}, {"type": "order", "title": "Order the artifact workflow", "hint": "Tap the steps in order.", "items": ["Ask for the core tool", "Try it yourself", "Request one change", "Compare versions", "Test with known answers"]}], "quiz": [["An artifact is best described as", ["a chat message", "something Claude makes that you would put in front of someone, shown in a side panel", "a settings page", "a type of memory"], 1, "Artifacts are standalone outputs: documents, decks, designs, tools."], ["A change made your artifact worse. You can", ["only start again", "return to an earlier version", "delete your account", "turn on research"], 1, "Artifacts keep versions."], ["The most reliable way to build an interactive tool is", ["ask for every feature at once", "build the core, then add one feature at a time", "paste code from elsewhere", "avoid testing"], 1, "Small steps are easier to check."], ["Before sharing a calculator artifact you should", ["test it with inputs whose answer you know", "remove the labels", "turn off file creation", "shorten its name"], 0, "Known-answer tests catch formula errors."], ["Which is an example of an interactive artifact?", ["A grade calculator", "A memory summary", "A connector", "An incognito chat"], 0, "Artifacts can be working tools."]], "c": "#4f46e5"}]}, {"id": "W2", "short": "Week 2", "kicker": "Week 2 · 3 lessons · 5 h", "title": "Week 2: Arts, humanities and communication", "theme": "Docs, Slides and Design; publish, share and remix", "c": "#db2777", "c2": "#9333ea", "desc": "Design visuals, co-write documents and build talks, then publish, share and remix artifacts.", "pills": ["Step 1", "Step 2", "Step 3"], "units": [{"id": "w2s1", "code": "W2 · Step 1", "title": "Design visuals with the Design template", "hours": 1.5, "c": "#db2777", "feature": "Artifact templates: Design", "subject": "Visual arts and design", "locked": true}, {"id": "w2s2", "code": "W2 · Step 2", "title": "Co-write documents with Docs and \"Edit with Claude\"", "hours": 1.5, "c": "#9333ea", "feature": "Artifact templates: Docs, direct editing and \"Edit with Claude\"", "subject": "Writing and storytelling", "locked": true}, {"id": "w2s3", "code": "W2 · Step 3", "title": "Present, publish, share and remix", "hours": 2, "c": "#c026d3", "feature": "Slides template; publishing, sharing and remixing artifacts", "subject": "Presentation and performing arts", "locked": true}]}, {"id": "W3", "short": "Week 3", "kicker": "Week 3 · 3 lessons · 6 h", "title": "Week 3: Commerce, business and management", "theme": "AI-powered artifacts, Projects and Customize", "c": "#16a34a", "c2": "#0d9488", "desc": "Build dollar-based simulations, ground Claude in your own documents with Projects, and customize Claude with instructions, skills and memory.", "pills": ["Step 1", "Step 2", "Step 3"], "units": [{"id": "w3s1", "code": "W3 · Step 1", "title": "AI-powered artifacts: simulations that think and remember", "hours": 2, "c": "#16a34a", "feature": "AI-powered artifacts and saved data", "subject": "Finance and commerce: pricing simulations", "locked": true}, {"id": "w3s2", "code": "W3 · Step 2", "title": "Projects: a workspace with your own documents", "hours": 2, "c": "#0d9488", "feature": "Projects, project knowledge and project instructions", "subject": "Management and HR: incentive systems", "locked": true}, {"id": "w3s3", "code": "W3 · Step 3", "title": "Customize Claude: instructions, skills and memory", "hours": 2, "c": "#65a30d", "feature": "Customize: Instructions for Claude, Skills, Memory and chat search, incognito", "subject": "Business and entrepreneurship: idea generation", "locked": true}]}, {"id": "W4", "short": "Week 4", "kicker": "Week 4 · 3 lessons · 5.5 h", "title": "Week 4: Cross-disciplinary work and responsible use", "theme": "Research, connectors, review and norms", "c": "#ea580c", "c2": "#e11d48", "desc": "Research with citations, connect your apps, review AI content responsibly, and write your AI use charter.", "pills": ["Step 1", "Step 2", "Step 3"], "units": [{"id": "w4s1", "code": "W4 · Step 1", "title": "Research and connectors for cross-disciplinary projects", "hours": 2, "c": "#ea580c", "feature": "Research mode and connectors (Google Workspace, custom connectors)", "subject": "Cross-disciplinary projects", "locked": true}, {"id": "w4s2", "code": "W4 · Step 2", "title": "Review AI content for accuracy, bias and safety", "hours": 1.5, "c": "#e11d48", "feature": "Responsible use: verification, privacy and review", "subject": "Ethics and safety: content review", "locked": true}, {"id": "w4s3", "code": "W4 · Step 3", "title": "AI norms and your capstone portfolio", "hours": 2, "c": "#b45309", "feature": "Putting it together: a shared charter and a portfolio of artifacts", "subject": "Policy and governance: AI use norms", "locked": true}]}, {"id": "S", "short": "Practice Studio", "kicker": "Hands-on · 4 tools", "title": "Practice Studio", "c": "#16a34a", "c2": "#0d9488", "desc": "Prompt builder, artifact planner, business simulators in $ and a content review desk, open at any time.", "pills": ["4 tools", "Open any time"], "labs": [{"id": "s1", "title": "Prompt Studio", "sub": "Week 1 · prompting", "intro": "Build prompts with role, task, audience, context, format and constraints, then copy them into Claude.", "widgets": ["pbuild"], "tips": ["Start from a real task you will do this week.", "Change one part of the prompt at a time and compare results.", "Save prompts that work in a personal library."], "assess": ["Writes a prompt with all six parts.", "Iterates with a specific follow-up.", "Verifies claims before use."], "viva": [["Which part of a prompt changes depth the most?", "Naming the audience and what they already know."], ["Why iterate instead of starting again?", "Targeted follow-ups refine a good draft faster and keep what already works."]], "c": "#2563eb"}, {"id": "s2", "title": "Artifact Planner", "sub": "Weeks 1–2 · artifacts and files", "intro": "Answer three questions and see which artifact type or file format suits your task, with the steps to make it.", "widgets": ["artpick"], "tips": ["Decide who will use the output and how before choosing a format.", "Use templates when people will edit the result themselves."], "assess": ["Chooses a suitable artifact type or file format.", "Explains publish versus share."], "viva": [["When would you pick Excel over a Docs artifact?", "When the content needs formulas or calculations that update."], ["What is the difference between publish and share?", "Publishing makes a public link viewable without an account; sharing gives chosen people or link holders view or edit access, and they need a Claude account."]], "c": "#7c3aed"}, {"id": "s3", "title": "Business Simulators", "sub": "Week 3 · commerce in $", "c": "#16a34a", "locked": true}, {"id": "s4", "title": "Content Review Desk", "sub": "Week 4 · responsible use", "c": "#e11d48", "locked": true}], "note": ["How to use the studio", "Use these tools alongside the lessons or on your own. They run entirely in your browser; nothing you type is sent anywhere."]}]}}, "prompts": [{"id": "p1", "lesson": "w1s1", "subject": "STEM", "level": "Any audience", "task": "Simplify a complex concept", "t": "Explain [concept] to [audience, e.g. first-year undergraduates / new hires in finance] using one analogy from [familiar context], in no more than 120 words and without unexplained jargon. End with one question that checks understanding.", "out": "A short, accurate explanation with a single analogy and a check-for-understanding question."}, {"id": "p2", "lesson": "w1s1", "subject": "Any field", "task": "Iterate on a draft", "t": "Rewrite your explanation for [new audience]. Keep the analogy, cut it to [n] words, and list any statement a specialist might dispute.", "out": "A tighter second version plus a list of claims to verify."}, {"id": "p3", "lesson": "w1s2", "subject": "STEM / quantitative", "task": "Generate a problem set", "t": "Create [n] [course level] problems on [skill, e.g. compound interest / dosage calculation / load analysis] set in [context, e.g. a hospital pharmacy]. Vary difficulty from routine to applied. Give a separate worked-solution key, then build it as an Excel file with one problem per row and the answers calculated by formula.", "out": "A themed problem set with a worked key, delivered as an .xlsx file whose answers recalculate."}, {"id": "p4", "lesson": "w1s3", "subject": "Engineering & technology", "task": "Design a hands-on challenge", "t": "Design a [duration] hands-on challenge on [concept] for [audience] using only [materials or free tools]. Include the goal, constraints, step-by-step instructions, one safety or risk note, and how success will be measured. Then build it as an interactive artifact where participants can enter their design values and see the result.", "out": "A low-cost challenge brief and a small interactive tool to test designs."}], "features": [{"f": "Artifacts (create, iterate, versions)", "where": "Ask in any chat; side panel", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Needs code execution and file creation turned on.", "help": "artifacts", "lesson": "w1s3"}, {"f": "Artifact templates: Docs, Slides, Design", "where": "Output button or Artifacts tab", "plans": ["N", "Y", "Y", "Y", "Y"], "note": "Edit directly or select text and use \"Edit with Claude\".", "help": "artifacts", "lesson": "w2s1"}, {"f": "AI-powered artifacts (call Claude inside)", "where": "Ask Claude to add AI features", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "No API key needed by users. Check the Help Center for current limits.", "help": "artifacts", "lesson": "w3s1"}, {"f": "Artifact saved data (20 MB) and app connections", "where": "Ask Claude to save data or use a connected app", "plans": ["N", "Y", "Y", "Y", "Y"], "note": "Personal (private) or shared (visible to all users) data.", "help": "artifacts", "lesson": "w3s1"}, {"f": "Publish, share and remix artifacts", "where": "Publish / Share / Copy on the artifact", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Pro/Max share: only you or anyone with the link. Team/Enterprise: people or organisation. Unpublished artifacts cannot be republished.", "help": "publish", "lesson": "w2s3"}, {"f": "Code execution and file creation (xlsx, docx, pptx, pdf)", "where": "Settings → Capabilities", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Up to 30 MB per file. Admins can turn it off on Team/Enterprise.", "help": "files", "lesson": "w1s2"}, {"f": "Projects and project knowledge", "where": "Projects", "plans": ["P", "Y", "Y", "Y", "Y"], "note": "Free: up to five projects. Paid: retrieval expands knowledge capacity. Sharing: Team/Enterprise.", "help": "projects", "lesson": "w3s2"}, {"f": "Instructions for Claude (account-wide)", "where": "Initials → Settings", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Use project instructions for project-only rules.", "help": "personal", "lesson": "w3s3"}, {"f": "Skills (built-in and custom)", "where": "Customize → Skills", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Needs code execution. Custom skills upload as a ZIP containing skill.md.", "help": "skills", "lesson": "w3s3"}, {"f": "Memory", "where": "Settings → Capabilities", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "View, edit, pause or reset. Each project has its own memory.", "help": "memory", "lesson": "w3s3"}, {"f": "Chat search", "where": "Settings → Capabilities", "plans": ["N", "Y", "Y", "Y", "Y"], "note": "Finds context in earlier conversations.", "help": "memory", "lesson": "w3s3"}, {"f": "Incognito chats", "where": "Ghost icon", "plans": ["Y", "Y", "Y", "Y", "Y"], "note": "Not saved to memory or chat history.", "help": "memory", "lesson": "w3s3"}, {"f": "Research", "where": "\"+\" in the chat box → Research", "plans": ["N", "Y", "Y", "Y", "Y"], "note": "Needs web search on. Uses limits faster.", "help": "research", "lesson": "w4s1"}, {"f": "Connectors (incl. custom remote MCP)", "where": "Customize → Connectors; \"+\" per chat", "plans": ["P", "Y", "Y", "Y", "Y"], "note": "Free: one custom connector. Team/Enterprise: owners add them in Organization settings.", "help": "connectors", "lesson": "w4s1"}], "plans": ["Free", "Pro", "Max", "Team", "Enterprise"], "help": {"artifacts": "https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them", "publish": "https://support.claude.com/en/articles/9547008-publish-and-share-artifacts", "files": "https://support.claude.com/en/articles/12111783", "projects": "https://support.claude.com/en/articles/9517075", "personal": "https://support.claude.com/en/articles/10185728-understanding-claude-s-personalization-features", "skills": "https://support.claude.com/en/articles/12512180", "memory": "https://support.claude.com/en/articles/11817273", "research": "https://support.claude.com/en/articles/11088861", "connectors": "https://support.claude.com/en/articles/11175166", "gworkspace": "https://support.claude.com/en/articles/10166901", "help": "https://support.claude.com"}, "domains": [["Health sciences", {"role": "an experienced university lecturer in public health", "task": "Explain the difference between incidence and prevalence", "aud": "first-year nursing students", "ctx": "they know basic percentages but no epidemiology", "fmt": "120 words, one analogy, then one check question", "cons": "no unexplained jargon; use a local clinic example"}], ["Engineering", {"role": "a senior structural engineer who mentors graduates", "task": "Explain why a truss is stiffer than a solid beam of the same mass", "aud": "graduate engineers in their first month", "ctx": "they know statics but have not designed a truss", "fmt": "150 words with one sketch described in words", "cons": "use SI units; no equations beyond one line"}], ["Business and finance", {"role": "a finance trainer for small-business owners", "task": "Explain cash flow versus profit", "aud": "new café owners", "ctx": "they read a profit and loss statement but not a cash-flow statement", "fmt": "a 5-row table plus 80 words", "cons": "use $ amounts under $5,000; plain English"}], ["Humanities and law", {"role": "a law lecturer who teaches first-year students", "task": "Explain the difference between precedent and statute", "aud": "first-year law students", "ctx": "they have read one case but no legislation", "fmt": "100 words and two examples", "cons": "neutral, jurisdiction-agnostic wording"}], ["Education", {"role": "a teacher educator", "task": "Explain formative versus summative assessment", "aud": "new university tutors", "ctx": "they have graded exams but not used feedback cycles", "fmt": "120 words, then a three-item checklist", "cons": "practical, no theory names"}], ["Information technology", {"role": "an IT trainer", "task": "Explain what an API is", "aud": "non-technical project managers", "ctx": "they use web apps daily", "fmt": "100 words with a restaurant analogy", "cons": "no code; one real example"}]], "links": {"test": "course-assessment.html", "trainer": "trainer-view.html"}};
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const W = {};                       /* widget registry: name -> function(el, color, cfg) */
+const PROG = {quiz: {}, check: {}, prog: {}};   /* progress for this visit only */
+const cssC = (c, c2) => `--c:${c};--c2:${c2 || c}`;
+const go = h => { location.hash = "#/" + h; };
+let CID = "X";                      /* current class */
+const CLS = id => DATA.classes.find(c => c.id === id);
+const CL = () => DATA.C[CID];
+const PART = id => CL().parts.find(p => p.id === id);
+function crumbs(list){
+  return `<nav class="crumbs">` + list.map((x, i) => (i ? `<span class="sep">›</span>` : "") + `<a href="#/${x[0]}" style="--c:${x[2]}">${esc(x[1])}</a>`).join("") + `</nav>`;
+}
+const baseCrumbs = () => DATA.single ? [["", CLS(CID).name, CLS(CID).c]] : [["", "Home", "#ea580c"], [CID, CLS(CID).name, CLS(CID).c]];
+const pills = (a, cls) => a.map(t => `<span class="${cls || "pill"}">${esc(t)}</span>`).join("");
+
+/* ---------- pages ---------- */
+function pageHome(){
+  return `<section class="hero" style="${cssC("#ea580c", "#db2777")}"><h2>AI Education for CBSE students</h2><p>Choose your class. Each class opens its units, interactive labs, quizzes and a mind map of the curriculum.</p></section>
+  <div class="grid big">` + DATA.classes.filter(c => !c.extra).map(classCard).join("") + `</div>` +
+  (DATA.classes.some(c => c.extra) ? `<section class="hero" style="${cssC("#0f766e", "#4338ca")};margin-top:18px;padding:14px 18px"><h2 style="font-size:20px">Beyond the classroom</h2><p>Advanced sections for teachers and aspirants preparing for higher-level examinations.</p></section>
+  <div class="grid big">` + DATA.classes.filter(c => c.extra).map(classCard).join("") + `</div>` : "");
+}
+function classCard(c){
+  return c.active ?
+    `<a class="card" href="#/${c.id}" style="${cssC(c.c, c.c2)}"><span class="k">${esc(c.kicker)}</span><span class="cls">${c.id}</span><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p><div class="meta">${pills(c.tags)}</div></a>` :
+    `<div class="card lock" style="${cssC(c.c, c.c2)}"><span class="k">${esc(c.kicker)}</span><span class="cls">${c.id}</span><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p><div class="meta"><span class="pill">Coming soon</span></div></div>`;
+}
+function pageClass(){
+  const c = CLS(CID), X = CL();
+  return crumbs(baseCrumbs()) +
+  `<section class="hero" style="${cssC(c.c, c.c2)}"><h2>${esc(X.title)}</h2><p>${esc(X.summary)}</p><div class="chips">${pills(X.chips, "chip")}</div></section>
+  <div class="grid big">` + X.parts.map(p => `<a class="card" href="#/${CID}/${p.id}" style="${cssC(p.c, p.c2)}"><span class="k">${esc(p.kicker)}</span><h3>${esc(p.title)}</h3><p>${esc(p.desc)}</p><div class="meta">${pills(p.pills)}</div></a>`).join("") +
+  `<a class="card" href="#/${CID}/map" style="${cssC("#d97706", "#ca8a04")}"><span class="k">Overview</span><h3>Curriculum mind map</h3><p>The whole ${esc(c.name)} curriculum as an interactive, colour-coded mind map. Tap any branch to open or close it.</p><div class="meta"><span class="pill">${X.parts.length} branches</span></div></a>
+   <a class="card" href="#/${CID}/quiz" style="${cssC("#0891b2", "#2563eb")}"><span class="k">Test yourself</span><h3>${esc(c.name)} mixed quiz</h3><p>Twenty random questions from all units, with explanations.</p><div class="meta"><span class="pill">${allQ().length} questions in the bank</span></div></a></div>`;
+}
+function unitPills(u){
+  const a = [];
+  if (u.hours) a.push(u.hours + " h");
+  if (u.th) a.push("Theory " + u.th + " h");
+  if (u.pr) a.push("Practical " + u.pr + " h");
+  if (u.marks) a.push(u.marks + " marks"); else if (u.assess) a.push("Assessed through " + u.assess);
+  return a;
+}
+function pagePart(pid){
+  const p = PART(pid);
+  let h = crumbs(baseCrumbs().concat([[CID + "/" + pid, p.short, p.c]])) +
+    `<section class="hero" style="${cssC(p.c, p.c2)}"><h2>${esc(p.title)}</h2><p>${esc(p.desc)}</p><div class="chips">${pills(p.pills, "chip")}</div></section>`;
+  if (p.labs) return h + pageLabs(p);
+  h += `<div class="grid">` + p.units.map((u, i) => { const lab = u.code || "Unit " + (i + 1);
+    return u.locked ? `<div class="card lock" style="--c:${u.c}"><span class="k">${esc(lab)}</span><h3>${esc(u.title)}</h3><p>Available in the full edition.</p><div class="meta"><span class="pill">🔒 Full edition</span></div></div>` :
+    `<a class="card" href="#/${CID}/${pid}/${u.id}" style="--c:${u.c}"><span class="k">${esc(lab)}</span><h3>${esc(u.title)}</h3><p>${esc(u.outcomes[0])}</p><div class="meta">${pills(unitPills(u))}<span class="pill">${u.quiz.length} quiz Qs</span>${PROG.quiz[CID + u.id] != null ? `<span class="pill">Best ${PROG.quiz[CID + u.id]}/${u.quiz.length}</span>` : ""}</div></a>`; }).join("") + `</div>`;
+  const qs = p.units.filter(u => !u.locked).flatMap(u => u.quiz);
+  if (qs.length) h += `<section class="sec" style="--c:${p.c};margin-top:14px"><h3><span class="n">?</span>${esc(p.short)} quiz</h3><p class="mut">${Math.min(10, qs.length)} random questions from every unit here.</p><a class="btn p" style="--c:${p.c}" href="#/${CID}/${pid}/quiz">Start the ${esc(p.short)} quiz</a></section>`;
+  return h;
+}
+function pageUnit(pid, uid){
+  const p = PART(pid), i = p.units.findIndex(u => u.id === uid), u = p.units[i];
+  if (!u || u.locked) return pagePart(pid);
+  const lab = u.code || "Unit " + (i + 1);
+  let n = 0; const sec = (title, body) => `<section class="sec" style="--c:${u.c}"><h3><span class="n">${++n}</span>${title}</h3>${body}</section>`;
+  let h = crumbs(baseCrumbs().concat([[CID + "/" + pid, p.short, p.c], [CID + "/" + pid + "/" + uid, lab, u.c]])) +
+    `<section class="hero" style="${cssC(u.c, p.c)}"><h2>${esc(lab)}: ${esc(u.title)}</h2><div class="chips">${pills(unitPills(u), "chip")}</div></section>`;
+  h += sec("Learning outcomes", `<ul class="lo">${u.outcomes.map(o => `<li>${esc(o)}</li>`).join("")}</ul>`);
+  h += sec("Key concepts <span class=\"mut\" style=\"font-weight:400\">(tap to open)</span>", `<div class="topics">${u.topics.map(t => `<details class="topic"><summary>${esc(t[0])}</summary><div>${esc(t[1])}</div></details>`).join("")}</div>`);
+  const acts = u.activities || (u.activity ? [u.activity] : []);
+  acts.forEach((a, k) => { h += sec("Activity: " + esc(a.title), `<div id="act${k}"></div>`); });
+  if (u.tools && u.tools.length) h += sec("Suggested tools and activities from the curriculum", `<div class="links">${u.tools.map(t => `<a href="${t[1]}" target="_blank" rel="noopener">${esc(t[0])} ↗</a>`).join("")}</div>`);
+  h += sec("Quiz", `<div id="uq"></div>`);
+  const nb = p.units.filter(x => !x.locked), j = nb.indexOf(u);
+  h += `<div class="row" style="justify-content:space-between">${j > 0 ? `<a class="btn" style="--c:${nb[j - 1].c}" href="#/${CID}/${pid}/${nb[j - 1].id}">← ${esc(nb[j - 1].title)}</a>` : "<span></span>"}${j < nb.length - 1 ? `<a class="btn" style="--c:${nb[j + 1].c}" href="#/${CID}/${pid}/${nb[j + 1].id}">${esc(nb[j + 1].title)} →</a>` : ""}</div>`;
+  $("#app").innerHTML = h;
+  acts.forEach((a, k) => activity($("#act" + k), a, u.c));
+  quiz($("#uq"), u.quiz, u.c, CID + u.id);
+  return null;
+}
+function allQ(){ return CL().parts.filter(p => p.units).flatMap(p => p.units.filter(u => !u.locked).flatMap(u => u.quiz)); }
+function pageQuiz(pid){
+  const p = pid ? PART(pid) : null, col = p ? p.c : "#0891b2";
+  const qs = p ? p.units.filter(u => !u.locked).flatMap(u => u.quiz) : allQ(), n = p ? 10 : 20;
+  $("#app").innerHTML = crumbs(baseCrumbs().concat(p ? [[CID + "/" + pid, p.short, p.c]] : []).concat([[CID + (p ? "/" + pid : "") + "/quiz", "Quiz", col]])) +
+    `<section class="hero" style="${cssC(col, p ? p.c2 : "#2563eb")}"><h2>${p ? esc(p.short) + " quiz" : esc(CLS(CID).name) + " mixed quiz"}</h2><p>${Math.min(n, qs.length)} random questions. Each answer shows an explanation.</p></section><section class="sec" style="--c:${col}"><div id="pq"></div></section>`;
+  quiz($("#pq"), shuffle(qs).slice(0, n), col, CID + "q" + (pid || ""));
+  return null;
+}
+
+/* ---------- activities ---------- */
+function activity(el, a, c){
+  el.style.setProperty("--c", c);
+  if (a.type === "sort") return sortAct(el, a);
+  if (a.type === "order") return orderAct(el, a);
+  if (a.type === "widget") { if (W[a.name]) W[a.name](el, c, a.cfg || {}); else el.innerHTML = `<div class="lockbox">This activity is available in the full edition.</div>`; }
+}
+const BUCKC = ["#2563eb", "#16a34a", "#db2777", "#d97706", "#7c3aed", "#0891b2"];
+function sortAct(el, a){
+  let place = a.items.map(() => -1), sel = -1, checked = false; const order = shuffle(a.items.map((_, i) => i));
+  function draw(){
+    const chip = i => `<button class="it ${sel === i ? "sel" : ""} ${checked && place[i] >= 0 ? (place[i] === a.items[i][1] ? "good" : "bad") : ""}" data-i="${i}">${esc(a.items[i][0])}</button>`;
+    const right = place.filter((b, i) => b === a.items[i][1]).length;
+    el.innerHTML = `<p class="mut">${esc(a.hint || "")} Tap an item, then a box. To move a placed item, tap it, then another box or this top area.</p><div class="pool">${order.filter(i => place[i] < 0).map(chip).join("") || `<span class="mut">All items placed.</span>`}</div>
+      <div class="buckets">${a.buckets.map((b, k) => `<div class="bucket" data-b="${k}" style="--bc:${BUCKC[k % BUCKC.length]}"><b>${esc(b)}</b>${order.filter(i => place[i] === k).map(chip).join("")}</div>`).join("")}</div>
+      <div class="row" style="margin-top:10px"><button class="btn p" data-a="check">Check</button><button class="btn" data-a="reset">Reset</button>
+      <span>${checked ? (right === a.items.length ? `<span class="okc">All ${right} correct!</span>` : `<span class="noc">${right} / ${a.items.length} correct.</span> <span class="mut">Red items are in the wrong box.</span>`) : ""}</span></div>`;
+  }
+  el.onclick = e => {
+    const it = e.target.closest(".it"), bk = e.target.closest(".bucket"), pool = e.target.closest(".pool"), ac = e.target.closest("[data-a]");
+    if (ac) { if (ac.dataset.a === "check") checked = true; else { place = place.map(() => -1); checked = false; } sel = -1; draw(); return; }
+    if (it) { const i = +it.dataset.i;
+      if (sel >= 0 && sel !== i && bk) place[sel] = +bk.dataset.b, sel = -1;
+      else if (sel >= 0 && sel !== i && pool && place[sel] >= 0) place[sel] = -1, sel = -1;
+      else sel = sel === i ? -1 : i;
+      checked = false; draw(); return; }
+    if (bk && sel >= 0) { place[sel] = +bk.dataset.b; sel = -1; draw(); return; }
+    if (pool && sel >= 0) { place[sel] = -1; sel = -1; draw(); }
+  };
+  draw();
+}
+function orderAct(el, a){
+  const mix = shuffle(a.items.map((_, i) => i)); let seq = [], checked = false;
+  function draw(){
+    const ok = checked && seq.every((v, i) => v === i) && seq.length === a.items.length;
+    el.innerHTML = `<p class="mut">${esc(a.hint || "")}</p><div class="pool">${mix.filter(i => !seq.includes(i)).map(i => `<button class="it" data-i="${i}">${esc(a.items[i])}</button>`).join("") || `<span class="mut">All chosen.</span>`}</div>
+      <div class="seq">${seq.map((v, k) => `<span class="it ${checked ? (v === k ? "good" : "bad") : ""}" data-n="${k + 1}">${esc(a.items[v])}</span>${k < seq.length - 1 ? "<span>→</span>" : ""}`).join("") || `<span class="mut">Your order appears here.</span>`}</div>
+      <div class="row"><button class="btn p" data-a="check" ${seq.length < a.items.length ? "disabled" : ""}>Check</button><button class="btn" data-a="undo">Undo</button><button class="btn" data-a="reset">Reset</button>
+      <span>${checked ? (ok ? `<span class="okc">Correct order!</span>` : `<span class="noc">Not yet.</span> <span class="mut">Red items are in the wrong position.</span>`) : ""}</span></div>`;
+  }
+  el.onclick = e => {
+    const it = e.target.closest("button.it"), ac = e.target.closest("[data-a]");
+    if (it) { seq.push(+it.dataset.i); checked = false; draw(); }
+    if (ac) { const t = ac.dataset.a; if (t === "check") checked = true; if (t === "undo") { seq.pop(); checked = false; } if (t === "reset") { seq = []; checked = false; } draw(); }
+  };
+  draw();
+}
+
+/* ---------- quiz ---------- */
+function quiz(el, qs, c, key){
+  el.style.setProperty("--c", c);
+  let i = 0, score = 0, ans = null; const order = qs.map(q => ({q, o: shuffle(q[1].map((t, k) => k))}));
+  function draw(){
+    if (i >= order.length) {
+      PROG.quiz[key] = Math.max(PROG.quiz[key] || 0, score);
+      const pct = Math.round(score / order.length * 100);
+      el.innerHTML = `<div class="qcard"><div class="q">Score: ${score} / ${order.length} (${pct}%)</div><div class="bar"><i style="width:${pct}%"></i></div><p>${pct >= 80 ? "Excellent work!" : pct >= 50 ? "Good. Revise the explanations of the questions you missed." : "Revise the key concepts and try again."}</p><button class="btn p" data-r="1">Try again</button></div>`;
+      return;
+    }
+    const {q, o} = order[i];
+    el.innerHTML = `<div class="qcard"><div class="qn">Question ${i + 1} of ${order.length} · Score ${score}</div><div class="bar"><i style="width:${i / order.length * 100}%"></i></div><div class="q">${esc(q[0])}</div>` +
+      o.map(k => `<button class="opt ${ans == null ? "" : k === q[2] ? "right" : k === ans ? "wrong" : ""}" data-k="${k}" ${ans == null ? "" : "disabled"}>${esc(q[1][k])}</button>`).join("") +
+      (ans == null ? "" : `<p><b class="${ans === q[2] ? "okc" : "noc"}">${ans === q[2] ? "Correct." : "Not quite."}</b> ${esc(q[3] || "")}</p><button class="btn p" data-n="1">${i < order.length - 1 ? "Next question" : "See score"}</button>`) + `</div>`;
+  }
+  el.onclick = e => {
+    const b = e.target.closest("[data-k]"), nx = e.target.closest("[data-n]"), r = e.target.closest("[data-r]");
+    if (b && ans == null) { ans = +b.dataset.k; if (ans === order[i].q[2]) score++; draw(); }
+    if (nx) { i++; ans = null; draw(); }
+    if (r) { i = 0; score = 0; ans = null; order.forEach(x => x.o = shuffle(x.o)); draw(); }
+  };
+  draw();
+}
+
+/* ---------- lab parts ---------- */
+function pageLabs(p){
+  const open = p.labs.filter(l => !l.locked), total = open.reduce((s, l) => s + l.assess.length, 0), done = open.reduce((s, l) => s + (PROG.check[CID + l.id] || []).filter(Boolean).length, 0);
+  let n = 0, h = "";
+  if (p.marksC) h += `<section class="sec" style="--c:${p.c}"><h3><span class="n">${++n}</span>Marks distribution (practical: 50 marks)</h3><div class="tw"><table><tr><th class="l">Component</th><th>Marks</th></tr>${p.marksC.map(r => `<tr><td class="l">${esc(r[0])}</td><td>${r[1]}</td></tr>`).join("")}<tr><th class="l">Total</th><th>50</th></tr></table></div></section>`;
+  h += `<section class="sec" style="--c:${p.c}"><h3><span class="n">${++n}</span>Your progress in this visit</h3><div class="kpis" style="--c:${p.c}">${p.programs ? `<div class="kpi"><b>${Object.keys(PROG.prog).length} / ${p.nprog}</b><span>practical-file programs run</span></div>` : ""}<div class="kpi"><b>${done} / ${total}</b><span>assessment points ticked</span></div></div><p class="mut">Progress is kept while this page stays open.</p></section>`;
+  h += `<div class="grid">` + p.labs.map((l, i) => l.locked ?
+    `<div class="card lock" style="--c:${l.c}"><span class="k">Lab ${i + 1}</span><h3>${esc(l.title)}</h3><p>${esc(l.sub)}</p><div class="meta"><span class="pill">🔒 Full edition</span></div></div>` :
+    `<a class="card" href="#/${CID}/${p.id}/${l.id}" style="--c:${l.c}"><span class="k">Lab ${i + 1}</span><h3>${esc(l.title)}</h3><p>${esc(l.sub)}</p><div class="meta"><span class="pill">${l.assess.length} assessment points</span><span class="pill">${l.viva.length} viva Qs</span></div></a>`).join("") + `</div>`;
+  if (p.sampleProjects) h += `<section class="sec" style="--c:${p.c2};margin-top:14px"><h3><span class="n">${++n}</span>Sample projects from the curriculum</h3><div class="tw"><table><tr><th class="l">Domain</th><th class="l">Project</th><th class="l">Tool / workflow</th><th class="l">Related SDG</th></tr>${p.sampleProjects.map(r => `<tr>${r.map(x => `<td class="l">${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div>
+    <p><b>Field work options:</b> ${p.field.map(esc).join(" · ")}.</p><p><b>Student portfolio</b> (continued from Class IX): a record of AI activities, hackathons and competitions; at least 5 activities, each related to a Sustainable Development Goal.</p></section>`;
+  if (p.note) h += `<section class="sec" style="--c:${p.c2};margin-top:14px"><h3><span class="n">${++n}</span>${esc(p.note[0])}</h3><p>${esc(p.note[1])}</p></section>`;
+  return h;
+}
+function pageLab(pid, lid){
+  const p = PART(pid), i = p.labs.findIndex(l => l.id === lid), l = p.labs[i];
+  if (!l || l.locked) { $("#app").innerHTML = pagePart(pid); return null; }
+  const key = CID + l.id, ck = PROG.check[key] || (PROG.check[key] = l.assess.map(() => false));
+  let h = crumbs(baseCrumbs().concat([[CID + "/" + pid, p.short, p.c], [CID + "/" + pid + "/" + l.id, "Lab " + (i + 1), l.c]])) +
+    `<section class="hero" style="${cssC(l.c, p.c)}"><h2>${esc(l.title)}</h2><p>${esc(l.intro)}</p><div class="chips"><span class="chip">${esc(l.sub)}</span></div></section>`;
+  const items = (l.acts || []).map(a => ["act", a]).concat(l.widgets.map(w => ["w", w]));
+  items.forEach((x, k) => { h += `<section class="sec" style="--c:${l.c}">${x[0] === "act" ? `<h3><span class="n">${k + 1}</span>${esc(x[1].title)}</h3>` : ""}<div id="lw${k}"></div></section>`; });
+  h += `<section class="sec" style="--c:${l.c}"><h3><span class="n">✓</span>Assessment points</h3><p class="mut">What the teacher or examiner looks for. Tick each point when you can do it confidently.</p><ul class="check" id="ck">${l.assess.map((a, k) => `<li><label><input type="checkbox" data-k="${k}" ${ck[k] ? "checked" : ""}> <span>${esc(a)}</span></label></li>`).join("")}</ul><p id="ckn" class="mut"></p></section>`;
+  h += `<section class="sec" style="--c:${l.c}"><h3><span class="n">?</span>Viva voce practice</h3>${l.viva.map(v => `<details class="viva"><summary>${esc(v[0])}</summary><p>${esc(v[1])}</p></details>`).join("")}</section>`;
+  $("#app").innerHTML = h;
+  items.forEach((x, k) => { const el = $("#lw" + k); el.style.setProperty("--c", l.c);
+    if (x[0] === "act") activity(el, x[1], l.c); else if (W[x[1]]) W[x[1]](el, l.c, {}); else el.innerHTML = `<div class="lockbox">Available in the full edition.</div>`; });
+  const upd = () => { const m = ck.filter(Boolean).length; $("#ckn").textContent = `${m} of ${ck.length} points ticked.`; };
+  $("#ck").onchange = e => { ck[+e.target.dataset.k] = e.target.checked; upd(); }; upd();
+  return null;
+}
+
+/* ---------- router ---------- */
+function render(){
+  const r = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+  let h = null;
+  if (DATA.single && r[0] !== DATA.single) r.unshift(DATA.single);   /* one-class file: every route belongs to that class */
+  if (!r.length || !DATA.C[r[0]]) h = pageHome();
+  else {
+    CID = r[0];
+    if (r.length === 1) h = pageClass();
+    else if (r[1] === "map") h = pageMap();
+    else if (r[1] === "quiz") h = pageQuiz(null);
+    else if (!PART(r[1])) h = pageClass();
+    else if (r.length === 2) h = pagePart(r[1]);
+    else if (r[2] === "quiz") h = pageQuiz(r[1]);
+    else if (PART(r[1]).labs) h = pageLab(r[1], r[2]);
+    else h = pageUnit(r[1], r[2]);
+  }
+  if (h !== null) $("#app").innerHTML = h;
+  if (r[1] === "map" && DATA.C[r[0]]) drawMap();
+  window.scrollTo(0, 0);
+}
+$("#home").onclick = () => go("");
+window.addEventListener("hashchange", render);
+
+/* ---------- mind map ---------- */
+const MMS = {};
+function buildTree(){
+  const X = CL(), node = (t, c, kids, route) => ({t, c, kids: kids || [], route, open: false});
+  const parts = X.parts.map(p => {
+    let kids;
+    if (p.units) kids = p.units.map((u, i) => node(`${u.code || "Unit " + (i + 1)}: ${u.title}` + (u.locked ? " 🔒" : ""), u.c, u.locked ? [] : u.topics.map(t => node(t[0], u.c)), u.locked ? null : `${CID}/${p.id}/${u.id}`));
+    else kids = (p.marksC ? [node("Marks distribution (50)", p.c, p.marksC.map(r => node(`${r[0]}: ${r[1]} marks`, p.c)))] : [])
+      .concat(p.labs.map(l => node(l.title + (l.locked ? " 🔒" : ""), l.c, l.locked ? [] : (l.id === "c1" ? p.programs.map((g, k) => node(`P${k + 1}. ${g.t}`, l.c)) : l.assess.map(a => node(a, l.c))), l.locked ? null : `${CID}/${p.id}/${l.id}`)))
+      .concat(p.sampleProjects ? [node("Sample projects", p.c2, p.sampleProjects.map(r => node(`${r[0]}: ${r[1]}`, p.c2)))] : []);
+    return node(p.title, p.c, kids, `${CID}/${p.id}`);
+  });
+  const root = node(X.mapTitle, "#ea580c", parts, CID);
+  root.open = true; parts.forEach(p => p.open = true);
+  return root;
+}
+function pageMap(){
+  return crumbs(baseCrumbs().concat([[CID + "/map", "Mind map", "#d97706"]])) +
+    `<section class="hero" style="${cssC("#d97706", "#ea580c")}"><h2>${esc(CLS(CID).name)} curriculum mind map</h2><p>Tap a box to open or close its branch. Double-tap (or use the ↗ link) to go to that unit or lab. Scroll sideways to see more.</p></section>
+    <div class="row" style="margin-bottom:8px;--c:#d97706"><button class="btn" data-lv="1">Parts only</button><button class="btn" data-lv="2">Show units</button><button class="btn" data-lv="3">Show topics</button><button class="btn p" data-lv="9">Expand all</button></div>
+    <div class="mmwrap" id="mm"></div>`;
+}
+function wrap(t, n){ const w = t.split(" "), out = []; let line = ""; w.forEach(x => { if ((line + " " + x).trim().length > n && line) { out.push(line); line = x; } else line = (line + " " + x).trim(); }); if (line) out.push(line); return out; }
+function drawMap(){
+  const MM = MMS[CID] || (MMS[CID] = buildTree());
+  document.querySelectorAll("[data-lv]").forEach(b => b.onclick = () => { const lv = +b.dataset.lv; (function f(n, d){ n.open = d < lv; n.kids.forEach(k => f(k, d + 1)); })(MM, 0); drawMap(); });
+  const COLW = [230, 250, 270, 300], LH = 15, PADY = 8;
+  const colX = d => 10 + COLW.slice(0, d).reduce((a, b) => a + b, 0) + d * 40;
+  let y = 10; const nodes = [], links = [];
+  (function lay(n, d, parent){
+    const maxc = Math.round((COLW[Math.min(d, 3)] - 30) / 7.2);
+    n.lines = wrap(n.t, maxc); n.h = n.lines.length * LH + 12; n.w = COLW[Math.min(d, 3)]; n.d = d; n.x = colX(d);
+    const vis = n.open ? n.kids : [];
+    if (!vis.length) { n.y = y; y += n.h + PADY; }
+    else { vis.forEach(k => lay(k, d + 1, n)); const f = vis[0], l = vis[vis.length - 1]; n.y = Math.max((f.y + f.h / 2 + l.y + l.h / 2) / 2 - n.h / 2, 0); if (n.y + n.h + PADY > y) y = n.y + n.h + PADY; }
+    nodes.push(n); if (parent) links.push([parent, n]);
+  })(MM, 0, null);
+  const W2 = Math.max(...nodes.map(n => n.x + n.w)) + 20, H = y + 10;
+  let s = links.map(([a, b]) => { const x1 = a.x + a.w, y1 = a.y + a.h / 2, x2 = b.x, y2 = b.y + b.h / 2, mx = (x1 + x2) / 2;
+    return `<path d="M${x1} ${y1}C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}" fill="none" stroke="${b.c}" stroke-width="${b.d < 2 ? 3 : 1.8}" opacity=".75"/>`; }).join("");
+  nodes.forEach((n, i) => {
+    const filled = n.d <= 2, fill = filled ? n.c : "#ffffff", tc = filled ? "#ffffff" : "#1f2937";
+    s += `<g class="mmnode" data-i="${i}"><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="9" fill="${fill}" stroke="${n.c}" stroke-width="${filled ? 0 : 1.6}"/>` +
+      n.lines.map((l, k) => `<text x="${n.x + 10}" y="${n.y + 18 + k * LH}" fill="${tc}" ${n.d <= 1 ? 'font-weight="700"' : n.d === 2 ? 'font-weight="600"' : ""}>${esc(l)}</text>`).join("") +
+      (n.kids.length ? `<circle cx="${n.x + n.w}" cy="${n.y + n.h / 2}" r="8" fill="#fff" stroke="${n.c}" stroke-width="2"/><text x="${n.x + n.w}" y="${n.y + n.h / 2 + 4}" text-anchor="middle" fill="${n.c}" font-weight="700">${n.open ? "−" : "+"}</text>` : "") +
+      (n.route ? `<a href="#/${n.route}"><text x="${n.x + n.w - 18}" y="${n.y + 15}" fill="${tc}" font-weight="700">↗</text></a>` : "") + `</g>`;
+  });
+  const el = $("#mm"); if (!el) return;
+  el.innerHTML = `<svg width="${W2}" height="${H}" viewBox="0 0 ${W2} ${H}">${s}</svg>`;
+  el.querySelectorAll(".mmnode").forEach(g => {
+    const n = nodes[+g.dataset.i];
+    g.addEventListener("click", e => { if (e.target.closest("a")) return; if (n.kids.length) { n.open = !n.open; drawMap(); } });
+    g.addEventListener("dblclick", () => { if (n.route) go(n.route); });
+  });
+}
+
+/* ---------- shared helpers for widgets ---------- */
+const f2 = (x, d) => (+x).toFixed(d == null ? 2 : d);
+const pyf = x => Number.isInteger(x) ? x + ".0" : String(+x.toPrecision(15));   /* Python-style float repr */
+const nums = s => s.split(/[\s,]+/).filter(Boolean).map(Number).filter(v => !isNaN(v));
+function rng(seed){ let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function gauss(r){ let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+/* sample data modelled on the Palmer Penguins dataset (synthetic values) */
+const PENG = (() => {
+  const r = rng(2026), S = [["Adelie", ["Torgersen", "Biscoe", "Dream"], 38.8, 2.6, 18.3, 1.2, 190, 6.5, 3700, 450], ["Chinstrap", ["Dream"], 48.8, 3.3, 18.4, 1.1, 196, 7.1, 3730, 380], ["Gentoo", ["Biscoe"], 47.5, 3.0, 15.0, 1.0, 217, 6.5, 5076, 500]];
+  const rows = [];
+  for (let k = 0; k < 20; k++) S.forEach(s => { const sex = r() < .5 ? "male" : "female", m = sex === "male" ? 1 : -1;
+    rows.push({species: s[0], island: s[1][Math.floor(r() * s[1].length)], bill_length_mm: +(s[2] + m * 1.2 + gauss(r) * s[3] * .8).toFixed(1), bill_depth_mm: +(s[4] + m * .5 + gauss(r) * s[5] * .8).toFixed(1),
+      flipper_length_mm: Math.round(s[6] + m * 3 + gauss(r) * s[7] * .8), body_mass_g: Math.round((s[8] + m * 300 + gauss(r) * s[9] * .7) / 25) * 25, sex}); });
+  return rows;
+})();
+const PCOL = {Adelie: "#f97316", Chinstrap: "#a855f7", Gentoo: "#0d9488"};
+const FEAT = [["bill_length_mm", "Bill length (mm)"], ["bill_depth_mm", "Bill depth (mm)"], ["flipper_length_mm", "Flipper length (mm)"], ["body_mass_g", "Body mass (g)"]];
+/* ---------- SVG charts ---------- */
+function niceTicks(a, b, n){ if (a === b) { a -= 1; b += 1; } const r = b - a, p = Math.pow(10, Math.floor(Math.log10(r / (n || 5)))), m = r / (n || 5) / p, st = (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p, t = [];
+  for (let v = Math.floor(a / st) * st; v <= Math.ceil(b / st) * st + st * 1e-9; v += st) t.push(+v.toFixed(10)); return t; }
+function axes(xs, ys, o){
+  o = o || {}; const W = o.w || 360, H = o.h || 240, l = 46, r = W - 14, t = 16, b = H - 36;
+  const tx = niceTicks(Math.min(...xs, o.x0 ?? Infinity), Math.max(...xs, o.x1 ?? -Infinity)), ty = niceTicks(Math.min(...ys, o.y0 ?? Infinity), Math.max(...ys, o.y1 ?? -Infinity));
+  const X0 = tx[0], X1 = tx[tx.length - 1], Y0 = ty[0], Y1 = ty[ty.length - 1], X = v => l + (v - X0) / (X1 - X0) * (r - l), Y = v => b - (v - Y0) / (Y1 - Y0) * (b - t);
+  let s = tx.map(v => `<path d="M${X(v)} ${t}V${b}" stroke="#e5e7eb"/><text x="${X(v)}" y="${b + 14}" text-anchor="middle" font-size="10" fill="#334155">${+v.toPrecision(6)}</text>`).join("") +
+    ty.map(v => `<path d="M${l} ${Y(v)}H${r}" stroke="#e5e7eb"/><text x="${l - 5}" y="${Y(v) + 3}" text-anchor="end" font-size="10" fill="#334155">${+v.toPrecision(6)}</text>`).join("") +
+    `<path d="M${l} ${t}V${b}H${r}" stroke="#334155" fill="none"/>` + (o.xl ? `<text x="${(l + r) / 2}" y="${H - 4}" text-anchor="middle" font-size="11" font-weight="600" fill="#1f2937">${esc(o.xl)}</text>` : "") +
+    (o.yl ? `<text transform="translate(11 ${(t + b) / 2}) rotate(-90)" text-anchor="middle" font-size="11" font-weight="600" fill="#1f2937">${esc(o.yl)}</text>` : "") + (o.title ? `<text x="${(l + r) / 2}" y="11" text-anchor="middle" font-size="11" font-weight="700" fill="#1f2937">${esc(o.title)}</text>` : "");
+  return {s, X, Y, W, H, l, r, t, b};
+}
+const svgWrap = (A, inner) => `<svg class="cv" viewBox="0 0 ${A.W} ${A.H}" width="${A.W}">${A.s}${inner}</svg>`;
+function barChart(labels, vals, o){
+  o = o || {}; const W = 360, H = 240, l = 46, r = W - 14, t = 16, b = H - 36, ty = niceTicks(0, Math.max(...vals, 1)), Y1 = ty[ty.length - 1], Y = v => b - v / Y1 * (b - t), bw = (r - l) / Math.max(labels.length, 1);
+  let s = ty.map(v => `<path d="M${l} ${Y(v)}H${r}" stroke="#e5e7eb"/><text x="${l - 5}" y="${Y(v) + 3}" text-anchor="end" font-size="10" fill="#334155">${v}</text>`).join("") + `<path d="M${l} ${t}V${b}H${r}" stroke="#334155" fill="none"/>`;
+  labels.forEach((lb, i) => { const x = l + i * bw + bw * .18, y = Y(Math.max(0, vals[i])); s += `<rect x="${x}" y="${y}" width="${bw * .64}" height="${b - y}" fill="${o.color || "#f97316"}"/><text x="${x + bw * .32}" y="${b + 14}" text-anchor="middle" font-size="10" fill="#334155">${esc(String(lb).length > Math.max(4, Math.floor(bw / 6)) ? String(lb).slice(0, Math.max(3, Math.floor(bw / 6) - 1)) + "…" : lb)}</text>`; });
+  if (o.yl) s += `<text transform="translate(11 ${(t + b) / 2}) rotate(-90)" text-anchor="middle" font-size="11" font-weight="600" fill="#1f2937">${esc(o.yl)}</text>`;
+  return `<svg class="cv" viewBox="0 0 ${W} ${H}" width="${W}">${s}</svg>`;
+}
+function pieChart(labels, vals, title){
+  const tot = vals.reduce((a, b) => a + b, 0), C = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]; let a0 = -Math.PI / 2, s = "";
+  vals.forEach((v, i) => { const a1 = a0 + v / tot * 2 * Math.PI, big = a1 - a0 > Math.PI ? 1 : 0, cx = 150, cy = 125, R = 85;
+    s += `<path d="M${cx} ${cy}L${cx + R * Math.cos(a0)} ${cy + R * Math.sin(a0)}A${R} ${R} 0 ${big} 1 ${cx + R * Math.cos(a1)} ${cy + R * Math.sin(a1)}Z" fill="${C[i % 6]}" stroke="#fff"/>`;
+    const am = (a0 + a1) / 2; s += `<text x="${cx + R * .6 * Math.cos(am)}" y="${cy + R * .6 * Math.sin(am) + 4}" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">${(v / tot * 100).toFixed(1)}%</text><text x="${cx + (R + 16) * Math.cos(am)}" y="${cy + (R + 16) * Math.sin(am) + 4}" text-anchor="${Math.cos(am) > 0 ? "start" : "end"}" font-size="11" fill="#1f2937">${esc(labels[i])}</text>`; a0 = a1; });
+  return `<svg class="cv" viewBox="0 0 300 240" width="300"><text x="150" y="16" text-anchor="middle" font-size="12" font-weight="700" fill="#1f2937">${esc(title || "")}</text>${s}</svg>`;
+}
+/* ---------- tiny synthetic images (for the CV programs) ---------- */
+function synthImage(kind, w, h){
+  const d = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let r, g, b; const i = (y * w + x) * 4;
+    if (kind === "flower") { const cx = w / 2, cy = h / 2, dx = x - cx, dy = y - cy, rr = Math.hypot(dx, dy), an = Math.atan2(dy, dx), pet = h * .32 * (0.65 + 0.35 * Math.cos(5 * an));
+      if (rr < h * .09) { r = 250; g = 204; b = 21; } else if (rr < pet) { r = 236; g = 72; b = 153; } else if (y > h * .78) { r = 34; g = 139; b = 34; } else { r = 186; g = 230; b = 253; } }
+    else { const t = y / h; r = 255; g = Math.round(120 + 100 * t); b = Math.round(60 + 40 * t); if (Math.hypot(x - w * .5, y - h * .62) < h * .2 && y < h * .62) { r = 255; g = 230; b = 120; } if (y > h * .62) { r = 30; g = 64; b = 175; } }
+    d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255; }
+  return d;
+}
+function drawImg(canvas, data, w, h, mode){
+  canvas.width = w; canvas.height = h; const ctx = canvas.getContext("2d"), im = ctx.createImageData(w, h);
+  for (let i = 0; i < data.length; i += 4) { let r = data[i], g = data[i + 1], b = data[i + 2];
+    if (mode === "bgr") [r, b] = [b, r]; if (mode === "gray") r = g = b = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    im.data[i] = r; im.data[i + 1] = g; im.data[i + 2] = b; im.data[i + 3] = 255; }
+  ctx.putImageData(im, 0, 0);
+}
+/* ---------- NLP helpers ---------- */
+const STOP = new Set("a an the and or but if is are was were be been am to of in on at by for with from as it its this that these those i you he she we they me him her us them my your our their do does did have has had will would can could should so than too very not no just into about over after before up down out also there here what which who whom when where why how all any each few more most other some such only own same s t".split(" "));
+function stem(w){ const rules = [["ies", "i"], ["ing", ""], ["ed", ""], ["es", ""], ["ly", ""], ["s", ""]]; for (const [a, b] of rules) if (w.length > a.length + 2 && w.endsWith(a)) return w.slice(0, -a.length) + b; return w; }
+function normalise(text, o){
+  let toks = (text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']/g) || []);
+  if (o.punct) toks = toks.filter(t => /^[A-Za-z']+$/.test(t)).map(t => t.replace(/'/g, ""));
+  if (o.lower) toks = toks.map(t => t.toLowerCase());
+  if (o.stop) toks = toks.filter(t => !STOP.has(t.toLowerCase()));
+  if (o.stem) toks = toks.map(t => stem(t.toLowerCase()));
+  return toks;
+}
+function bowTable(docs){
+  const vocab = []; docs.forEach(d => d.forEach(w => { if (!vocab.includes(w)) vocab.push(w); }));
+  const M = docs.map(d => vocab.map(v => d.filter(w => w === v).length)), DF = vocab.map((_, j) => M.filter(r => r[j] > 0).length), N = docs.length;
+  const IDF = DF.map(d => Math.log10(N / d));
+  return {vocab, M, DF, IDF, TFIDF: M.map(r => r.map((tf, j) => tf * IDF[j]))};
+}
+function hiPy(code){
+  return esc(code).replace(/(#.*)$/gm, '<span class="cm">$1</span>')
+    .replace(/(&#39;|')([^'\n]*)(')/g, '<span class="st">\'$2\'</span>').replace(/(&quot;)([^\n]*?)(&quot;)/g, '<span class="st">&quot;$2&quot;</span>')
+    .replace(/\b(import|from|as|for|in|if|elif|else|while|def|return|print|range|len|and|or|not|True|False|None)\b/g, '<span class="kw">$1</span>')
+    .replace(/\b(\d+\.?\d*)\b/g, '<span class="nu">$1</span>');
+}
+
+function lineChart(labels, series, o){
+  o = o || {}; const all = series.flatMap(s => s.v), A = axes([0, labels.length - 1], all.concat(o.zero ? [0] : []), Object.assign({w: 380, h: 250}, o));
+  const X = i => A.l + i * (A.r - A.l) / Math.max(1, labels.length - 1);
+  let s = A.s.replace(/<path d="M[\d.]+ \d+V\d+" stroke="#e5e7eb"\/><text[^>]*>[^<]*<\/text>/g, "");
+  labels.forEach((lb, i) => { if (labels.length <= 12 || i % 2 === 0) s += `<text x="${X(i)}" y="${A.b + 14}" text-anchor="middle" font-size="10" fill="#334155">${esc(lb)}</text>`; });
+  let inner = series.map(se => `<path d="M${se.v.map((v, i) => X(i) + " " + A.Y(v)).join("L")}" fill="none" stroke="${se.c}" stroke-width="2.5"/>` + se.v.map((v, i) => `<circle cx="${X(i)}" cy="${A.Y(v)}" r="3" fill="${se.c}"/>`).join("")).join("");
+  return `<svg class="cv" viewBox="0 0 ${A.W} ${A.H}" width="${A.W}">${s}${inner}</svg>`;
+}
+/* ---------- synthetic sales data for the IT/CS/AI data labs ---------- */
+const SALES = (() => {
+  const r = rng(417), C = ["Delhi", "Mumbai", "Chennai", "Kolkata", "Bengaluru"], P = [["Notebook", 60], ["Pen", 20], ["Calculator", 650], ["Bag", 900], ["Bottle", 250]], rows = [];
+  for (let i = 0; i < 60; i++) { const c = C[Math.floor(r() * 5)], p = P[Math.floor(r() * 5)], m = 1 + Math.floor(i / 10), d = 1 + Math.floor(r() * 28), u = Math.max(1, Math.round((p[1] > 500 ? 4 : 18) + gauss(r) * (p[1] > 500 ? 2 : 6)));
+    rows.push({order_id: 1001 + i, date: `2025-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, city: c, product: p[0], units: u, price: p[1], revenue: u * p[1], rating: r() < .12 ? null : Math.min(5, Math.max(1, Math.round(3.6 + gauss(r) * .9)))}); }
+  return rows;
+})();
+const PRODUCTS = [{product: "Notebook", category: "Stationery", supplier: "PaperCo"}, {product: "Pen", category: "Stationery", supplier: "InkWorks"}, {product: "Calculator", category: "Electronics", supplier: "CalcTech"}, {product: "Bag", category: "Accessories", supplier: "CarryAll"}, {product: "Lamp", category: "Electronics", supplier: "BrightLtd"}];
+const isNA = v => v === null || v === undefined || (typeof v === "number" && isNaN(v));
+function dfTable(rows, cols, n, opt){
+  cols = cols || (rows[0] ? Object.keys(rows[0]).filter(k => k !== "__i") : []); const show = n ? rows.slice(0, n) : rows; opt = opt || {};
+  return `<div class="tw"><table><tr>${opt.index === false ? "" : "<th></th>"}${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr>${show.map((r, i) => `<tr>${opt.index === false ? "" : `<td class="mut">${r.__i ?? i}</td>`}${cols.map(c => { const v = r[c]; return `<td${isNA(v) ? ' style="color:#dc2626;font-style:italic"' : ""}>${isNA(v) ? "NaN" : esc(typeof v === "number" && !Number.isInteger(v) ? +v.toFixed(3) : v)}</td>`; }).join("")}</tr>`).join("")}</table></div>${n && rows.length > n ? `<div class="mut">… ${rows.length - n} more rows · ${rows.length} rows × ${cols.length} columns</div>` : ""}`;
+}
+const pyv = v => isNA(v) ? "np.nan" : typeof v === "string" ? `'${v}'` : String(v);
+/* range sliders: update the label live while dragging, re-render only on release (re-rendering mid-drag would drop the slider) */
+document.addEventListener("input", e => {
+  const t = e.target; if (t.type !== "range" || e._live) return; e.stopPropagation();
+  const lb = t.closest("label"), sp = lb && lb.querySelector("span");
+  if (sp) { const h = sp.innerHTML, k = h.lastIndexOf(":"); if (k >= 0) sp.innerHTML = h.slice(0, k + 1) + h.slice(k + 1).replace(/-?\d+(\.\d+)?/, t.value); }
+}, true);
+document.addEventListener("change", e => { const t = e.target; if (t.type !== "range") return; const ev = new Event("input", {bubbles: true}); ev._live = true; t.dispatchEvent(ev); }, true);
+
+W.artpick = (el) => {
+  const Q = [["what", "What are you making?", [["text", "Text people will read or edit"], ["slides", "A talk or briefing"], ["visual", "A poster, infographic or one-page visual"], ["numbers", "Numbers, formulas or a model"], ["tool", "An interactive tool, quiz or simulation"], ["fixed", "A fixed, printable document"]]],
+             ["who", "Who will use it?", [["me", "Just me"], ["edit", "Colleagues who will edit it"], ["view", "People who only need to view it"], ["public", "Anyone, including people without a Claude account"]]],
+             ["extra", "Does it need any of these?", [["none", "No"], ["ai", "Feedback or coaching from Claude inside it"], ["save", "To remember scores or entries between visits"]]]];
+  const A = {}; Q.forEach(q => A[q[0]] = q[2][0][0]);
+  const REC = {text: ["Docs artifact (or a Word file)", "Choose the Docs template or ask for a document. Need a .docx? Ask for “a Word file”.", "w2s2"],
+    slides: ["Slides artifact (or a PowerPoint file)", "Choose the Slides template; ask for “a PowerPoint file” if you must send .pptx.", "w2s3"],
+    visual: ["Design artifact", "Choose the Design template and brief audience, style, sections and a word limit.", "w2s1"],
+    numbers: ["Excel file", "Ask for “an Excel file with formulas” so answers recalculate. Turn on file creation first.", "w1s2"],
+    tool: ["Interactive artifact", "Ask Claude to “build this as an interactive artifact”, then add features one at a time.", "w1s3"],
+    fixed: ["PDF file", "Ask for “a PDF” for a version that should not change.", "w1s2"]};
+  const SH = {me: "Keep it private (the default).", edit: "Share it with edit access (Team and Enterprise can add specific people or the organisation).", view: "Share it with view access, or publish if they have no Claude account.", public: "Publish it: people can view a published chat artifact without signing up."};
+  const EX = {none: "", ai: "Ask for an AI-powered artifact that calls Claude inside it; users need no API key.", save: "Ask for saved data: personal (private to each user) or shared (visible to all). Needs a paid plan."};
+  function draw(){
+    const r = REC[A.what];
+    el.innerHTML = `<h4>Which kind of artifact or file?</h4>${Q.map(q => `<div class="qpick"><b>${q[1]}</b><div class="row">${q[2].map(o => `<button class="btn ${A[q[0]] === o[0] ? "p" : ""}" data-q="${q[0]}" data-v="${o[0]}">${esc(o[1])}</button>`).join("")}</div></div>`).join("")}
+      <div class="rec"><span class="k">Recommendation</span><h4>${esc(r[0])}</h4><ol class="lo"><li>${esc(r[1])}</li><li>${esc(SH[A.who])}</li>${EX[A.extra] ? `<li>${esc(EX[A.extra])}</li>` : ""}</ol>
+      ${A.what === "tool" || A.extra !== "none" ? "" : `<p class="mut">Tip: templates (Docs, Slides, Design) are on paid plans; files and plain artifacts work on every plan.</p>`}
+      <a class="btn" href="${lessonHref(r[2])}">See the lesson →</a></div>`;
+  }
+  el.onclick = e => { const b = e.target.closest("[data-q]"); if (b) { A[b.dataset.q] = b.dataset.v; draw(); } };
+  draw();
+};
+W.pbuild = (el, c) => {
+  const P = DATA.prompts, DOM = DATA.domains;
+  let mode = "tpl", pi = 0, vals = {}, parts = {role: "an experienced university lecturer in public health", task: "Explain the difference between incidence and prevalence", aud: "first-year nursing students", ctx: "they know basic percentages but no epidemiology", fmt: "120 words, one analogy, then one check question", cons: "no unexplained jargon; use a local clinic example"};
+  const fill = (t, v) => t.replace(/\[([^\]]+)\]/g, (m, k) => v[k] && v[k].trim() ? v[k].trim() : m);
+  const holes = t => [...new Set([...t.matchAll(/\[([^\]]+)\]/g)].map(m => m[1]))];
+  const built = () => `You are ${parts.role}.\n${parts.task} for ${parts.aud}.\nContext: ${parts.ctx}.\nFormat: ${parts.fmt}.\nConstraints: ${parts.cons}.\nBefore finishing, list any statement I should verify.`;
+  const checks = () => [[parts.role.trim().length > 5, "Role"], [/^(write|create|explain|draft|design|build|generate|summari[sz]e|review|compare|plan|list)\b/i.test(parts.task.trim()), "Task starts with an action verb"],
+    [parts.aud.trim().length > 3, "Audience named"], [parts.ctx.trim().length > 5, "Context or prior knowledge"], [/\d/.test(parts.fmt) && parts.fmt.trim().length > 5, "Format with a size or count"], [parts.cons.trim().length > 5, "Constraints"]];
+  function draw(){
+    let h = `<div class="tabs"><button data-m="tpl" class="${mode === "tpl" ? "on" : ""}">Fill a template</button><button data-m="parts" class="${mode === "parts" ? "on" : ""}">Build from parts</button></div>`;
+    if (mode === "tpl") {
+      const p = P[pi];
+      h += `<label class="f"><span>Template (${P.length} in the library)</span><select id="pb-t">${P.map((x, i) => `<option value="${i}" ${i === pi ? "selected" : ""}>${esc(x.subject)} · ${esc(x.task)}</option>`).join("")}</select></label>
+        <div class="two"><div>${holes(p.t).map((k, i) => `<label class="f"><span>${esc(k)}</span><input type="text" id="pb-h${i}" data-h="${esc(k)}" value="${esc(vals[k] || "")}" placeholder="${esc(k)}"></label>`).join("")}
+        <p class="mut">Expected output: ${esc(p.out)}</p></div>
+        <div><label class="f"><span>Your prompt</span><textarea readonly id="pb-out" style="min-height:190px">${esc(fill(p.t, vals))}</textarea></label><div class="row"><button class="btn p" data-a="copy">Copy prompt</button><span class="mut" id="pb-msg"></span></div></div></div>`;
+    } else {
+      const C = checks(), sc = C.filter(x => x[0]).length;
+      h += `<div class="two"><div>${[["role", "Role: you are …"], ["task", "Task"], ["aud", "Audience"], ["ctx", "Context or what they already know"], ["fmt", "Format (length, structure)"], ["cons", "Constraints (tone, examples, limits)"]]
+        .map(([k, l]) => `<label class="f"><span>${l}</span><input type="text" id="pb-${k}" data-p="${k}" value="${esc(parts[k])}"></label>`).join("")}
+        <label class="f"><span>Your field (changes the example)</span><select id="pb-dom">${DOM.map(d => `<option>${esc(d[0])}</option>`).join("")}</select></label></div>
+        <div><div class="kpis"><div class="kpi"><b>${sc} / ${C.length}</b><span>prompt quality checks</span></div></div><ul class="check">${C.map(x => `<li>${x[0] ? `<span class="okc">✓</span>` : `<span class="noc">✗</span>`} ${x[1]}</li>`).join("")}</ul>
+        <label class="f"><span>Your prompt</span><textarea readonly id="pb-out" style="min-height:170px">${esc(built())}</textarea></label><div class="row"><button class="btn p" data-a="copy">Copy prompt</button><span class="mut" id="pb-msg"></span></div></div></div>`;
+    }
+    el.innerHTML = `<h4>Prompt builder</h4>` + h;
+  }
+  el.oninput = e => { const t = e.target;
+    if (t.dataset.h != null) { vals[t.dataset.h] = t.value; el.querySelector("#pb-out").value = fill(P[pi].t, vals); }
+    if (t.dataset.p) { parts[t.dataset.p] = t.value; el.querySelector("#pb-out").value = built(); const C = checks(), sc = C.filter(x => x[0]).length; el.querySelector(".kpi b").textContent = `${sc} / ${C.length}`; el.querySelector("ul.check").innerHTML = C.map(x => `<li>${x[0] ? `<span class="okc">✓</span>` : `<span class="noc">✗</span>`} ${x[1]}</li>`).join(""); } };
+  el.onchange = e => { if (e.target.id === "pb-t") { pi = +e.target.value; vals = {}; draw(); }
+    if (e.target.id === "pb-dom") { const d = DOM.find(x => x[0] === e.target.value); Object.assign(parts, d[1]); draw(); el.querySelector("#pb-dom").value = d[0]; } };
+  el.onclick = e => { const m = e.target.closest("[data-m]"), a = e.target.closest("[data-a]");
+    if (m) { mode = m.dataset.m; draw(); }
+    if (a) copyText(el.querySelector("#pb-out"), el.querySelector("#pb-msg")); };
+  draw();
+};
+
+/* ---------- Working with Claude: course overrides (loaded after engine.js and mindmap.js) ---------- */
+const CO = () => DATA.C.C;
+const weeks = () => CO().parts.filter(p => p.units);
+const lessons = () => weeks().flatMap(p => p.units);
+const studio = () => CO().parts.find(p => p.labs);
+const weekOf = u => weeks().find(p => p.units.includes(u));
+const lessonById = id => lessons().find(u => u.id === id);
+function lessonHref(id){ const u = lessonById(id); return u ? `#/C/${weekOf(u).id}/${u.id}` : "#/C"; }
+const helpLink = k => DATA.help[k] || DATA.help.help;
+function copyText(ta, msg){
+  const t = ta.value;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { if (msg) msg.textContent = "Copied."; },
+    () => { ta.focus(); ta.select(); if (msg) msg.textContent = "Selected: press Ctrl+C (or long-press → Copy)."; });
+}
+
+/* completion: a lesson is complete when its quiz is passed (60% or more); a week opens when the previous week is complete */
+const PASS = 0.6, DONE_KEY = "claude-course:lessons:" + (DATA.sample ? "sample" : "full");
+let DONE = {}; try { DONE = JSON.parse(localStorage.getItem(DONE_KEY) || "{}") || {}; } catch (e) { DONE = {}; }
+const saveDone = () => { try { localStorage.setItem(DONE_KEY, JSON.stringify(DONE)); } catch (e) {} };
+const openL = () => lessons().filter(u => !u.locked);
+const isDone = u => (DONE[u.id] || 0) >= PASS;
+const doneCount = () => openL().filter(isDone).length;
+const allDone = () => openL().length > 0 && doneCount() === openL().length;
+const weekDone = w => w.units.filter(u => !u.locked).every(isDone);
+function weekOpen(w){ const W = weeks(), i = W.indexOf(w); return i <= 0 || W.slice(0, i).every(x => x.units.every(u => u.locked) || weekDone(x)); }
+Object.keys(DONE).forEach(id => { const u = lessonById(id); if (u && !u.locked) PROG.quiz["C" + id] = Math.round(DONE[id] * u.quiz.length); });
+
+/* prompt cards (library and lessons) */
+function promptCard(p, k){
+  const holes = [...new Set([...p.t.matchAll(/\[([^\]]+)\]/g)].map(m => m[1]))];
+  return `<div class="pcard" data-pc="${k}"><div class="ph"><span class="pill">${esc(p.subject)}</span><b>${esc(p.task)}</b><span class="mut">${esc(p.level || "")}</span></div>
+    <details><summary>Fill in the blanks (${holes.length})</summary><div class="pgrid">${holes.map((h, i) => `<label class="f"><span>${esc(h)}</span><input type="text" id="pc${k}-${i}" data-ph="${esc(h)}" placeholder="${esc(h)}"></label>`).join("")}</div></details>
+    <textarea readonly id="pc${k}-out" class="ptxt">${esc(p.t)}</textarea>
+    <div class="row"><button class="btn p" data-copy="${k}">Copy prompt</button><span class="mut" id="pc${k}-msg"></span></div><p class="mut"><b>Expected output:</b> ${esc(p.out)}</p></div>`;
+}
+function wirePrompts(root, list){
+  root.addEventListener("input", e => { const card = e.target.closest("[data-pc]"); if (!card || e.target.dataset.ph == null) return;
+    const p = list[+card.dataset.pc], v = {}; card.querySelectorAll("[data-ph]").forEach(i => v[i.dataset.ph] = i.value.trim());
+    card.querySelector(".ptxt").value = p.t.replace(/\[([^\]]+)\]/g, (m, k) => v[k] || m); });
+  root.addEventListener("click", e => { const b = e.target.closest("[data-copy]"); if (!b) return; const k = b.dataset.copy; copyText($(`#pc${k}-out`), $(`#pc${k}-msg`)); });
+}
+
+/* landing + course dashboard */
+function pageClass(){
+  const X = CO(), W = weeks(), L = lessons(), open = openL(), S = studio();
+  const hrs = L.reduce((s, u) => s + (u.hours || 0), 0);
+  const next = open.find(u => !isDone(u) && weekOpen(weekOf(u))) || open[0];
+  const startHref = allDone() ? "#/C/final" : next ? lessonHref(next.id) : "#/C";
+  const startLabel = allDone() ? "Open the final review" : doneCount() ? `Continue with ${next.code}` : "Start Week 1";
+  const go = id => `document.getElementById('${id}').scrollIntoView({behavior:'smooth'})`;
+  let h = `<div class="landing">
+  <section class="landing-hero" aria-labelledby="landing-title"><div>
+    <span class="eyebrow">Professional learning · Higher education and every workplace · 4 weeks</span>
+    <h2 id="landing-title">Work with Claude. Build it, share it, use it responsibly.</h2>
+    <p class="lead">A practical, week-by-week course for faculty and working professionals in any field: prompting, files, artifacts, Docs, Slides and Design, Projects, Skills, Memory, Research and connectors, with your own use cases.</p>
+    <div class="hero-actions"><a class="cta primary" href="${startHref}">${esc(startLabel)} <span aria-hidden="true">→</span></a><button class="cta secondary" type="button" onclick="${go("explore")}">Explore first</button></div>
+    <div class="hero-note">${doneCount()} of ${open.length} ${DATA.sample ? "sample " : ""}lessons complete · Progress is stored in this browser.</div></div>
+    <div class="hero-stats" aria-label="Course highlights"><div class="hero-stat"><b>${W.length}</b><span>weeks</span></div><div class="hero-stat"><b>${L.length}</b><span>step-by-step lessons</span></div>
+      <div class="hero-stat"><b>${DATA.prompts.length}</b><span>prompt templates</span></div><div class="hero-stat"><b>${DATA.features.length}</b><span>Claude features</span></div></div></section>
+  <nav class="landing-nav" aria-label="Page sections">${[["about", "About the course"], ["why", "Why it is needed"], ["trainer", "Meet the trainer"], ["explore", "Explore"], ["training", "Course pathway"]].map(x => `<button type="button" onclick="${go(x[0])}">${x[1]}</button>`).join("")}</nav>
+  <section class="land-section tint" id="about"><span class="section-kicker">What is this course?</span><h2>Hands-on Claude skills for educators and professionals</h2>
+    <p>Each week focuses on a family of disciplines and on a set of Claude features. Every lesson pairs one real use case with numbered steps to do in Claude, ready-to-fill prompt templates and a short quiz.</p>
+    <div class="info-grid"><div class="info-card"><div class="ico" aria-hidden="true">✍️</div><h3>Prompt</h3><p>Write clear prompts, iterate on drafts and verify what comes back.</p></div>
+      <div class="info-card"><div class="ico" aria-hidden="true">🧩</div><h3>Build</h3><p>Create files, documents, decks, designs and interactive tools as artifacts, then publish, share or remix them.</p></div>
+      <div class="info-card"><div class="ico" aria-hidden="true">⚙️</div><h3>Customize</h3><p>Set up Projects, Instructions, Skills, Memory, Research and connectors so Claude fits the way you work.</p></div></div></section>
+  <section class="land-section" id="why"><span class="section-kicker">Why is it needed?</span><h2>Confident, safe and productive use of AI</h2>
+    <p>Most people use only a fraction of what Claude can do. This course closes that gap with practice in your own field, while keeping accuracy, privacy and academic or professional integrity in view.</p>
+    <div class="why-grid"><div class="reason-list">${[["Save time on routine work:", "explanations, problem sets, briefs, decks and reports."], ["Produce real files:", "Excel, Word, PowerPoint and PDF, plus interactive tools."], ["Make Claude yours:", "instructions, projects, skills and memory that reflect your context."], ["Work from evidence:", "research with citations and connectors to your own documents."], ["Stay responsible:", "verification, privacy, disclosure and clear AI norms."]].map(r => `<div class="reason"><span class="tick" aria-hidden="true">✓</span><p><b>${r[0]}</b> ${r[1]}</p></div>`).join("")}</div>
+      <aside class="goal-box"><b>The goal</b><p>Not to replace your expertise, but to multiply it: you stay the author, the reviewer and the decision maker.</p></aside></div></section>
+  <section class="land-section tint" id="trainer"><span class="section-kicker">Meet your trainer</span><div class="trainer"><div class="trainer-avatar" aria-label="Kaushal J initials">KJ</div><div><h3>Kaushal J</h3><div class="role">Trainer · Education Strategist · AI in Education</div>
+    <p>Kaushal J designed this course around hands-on practice: every lesson ends with something you have built and checked yourself, ready to use in your teaching or work.</p></div></div></section>
+  <section class="land-section" id="explore"><span class="section-kicker">Explore before you begin</span><h2>Look around the course</h2>
+    <p>These are open at any time. The course mind map and the final assessment come at the end, once all lessons are complete.</p>
+    <div class="explore-grid">
+      <a class="explore-card" href="#/C/library" style="--ec:#2563eb"><span class="ico" aria-hidden="true">📚</span><h3>Prompt Library</h3><p>${DATA.prompts.length} fill-in-the-blank templates for every week, with expected outputs and a copy button.</p><span class="go">Open the library →</span></a>
+      <a class="explore-card" href="#/C/features" style="--ec:#7c3aed"><span class="ico" aria-hidden="true">🗂️</span><h3>Claude feature guide</h3><p>Where each feature lives, which plans include it, and the lesson that teaches it.</p><span class="go">View the guide →</span></a>
+      <a class="explore-card" href="#/C/S" style="--ec:#16a34a"><span class="ico" aria-hidden="true">🧪</span><h3>Practice Studio</h3><p>Prompt builder, artifact planner, business simulators in $ and a content review desk.</p><span class="go">Try the studio →</span></a></div></section>
+  <section class="land-section tint" id="journey"><span class="section-kicker">How each lesson works</span><h2>Step by step, every week</h2>
+    <div class="journey">${[["1", "Learn", "The idea and the use case."], ["2", "Do", "Numbered steps in Claude."], ["3", "Prompt", "Fill a ready template."], ["4", "Build", "Make the artifact or file."], ["5", "Check", "Pass the lesson quiz."], ["6", "Progress", "Unlock the next week."]].map(x => `<div class="journey-step"><span class="num">${x[0]}</span><b>${x[1]}</b><span>${x[2]}</span></div>`).join("")}</div></section>
+  <section class="start-band" id="training"><div><span class="section-kicker">Ready for the course?</span><h2>${doneCount() ? "Continue your course" : "Begin with Week 1"}</h2>
+    <p>${allDone() ? "All lessons are complete. Continue to the final review and assessment." : next ? `Your next lesson is ${esc(next.code)}: ${esc(next.title)}.` : ""}</p></div><a class="btn p" style="--c:#ea580c" href="${startHref}">${esc(startLabel)} →</a></section>`;
+  h += `<div class="pathway-head"><h2>Your 4-week pathway</h2><p>Weeks open in order: finish every lesson in a week to unlock the next.</p></div>`;
+  W.forEach((w, wi) => {
+    const op = weekOpen(w), nd = w.units.filter(u => !u.locked && isDone(u)).length, no = w.units.filter(u => !u.locked).length;
+    h += `<section class="track ${op ? "" : "shut"}" style="${cssC(w.c, w.c2)}"><div class="th"><span class="tn">${op ? wi + 1 : "🔒"}</span><div><h3>${esc(w.title)}</h3><p><b>${esc(w.theme)}.</b> ${esc(w.desc)}</p>
+      <p class="mut">${no ? `${nd} of ${no} lessons complete` : "Full edition only"}${op ? "" : ` · Opens after ${esc(weeks()[wi - 1].short)}`}</p></div></div><div class="grid">` +
+      w.units.map(u => u.locked ? `<div class="card lock" style="--c:${u.c}"><span class="k">${esc(u.code)}</span><h3>${esc(u.title)}</h3><p>Available in the full edition.</p><div class="meta"><span class="pill">🔒 Full edition</span></div></div>`
+        : !op ? `<div class="card lock" style="--c:${u.c}"><span class="k">${esc(u.code)} · ${u.hours} h</span><h3>${esc(u.title)}</h3><p>${esc(u.feature)}</p><div class="meta"><span class="pill">🔒 Opens after ${esc(weeks()[wi - 1].short)}</span></div></div>`
+        : `<a class="card" href="#/C/${w.id}/${u.id}" style="--c:${u.c}"><span class="k">${esc(u.code)} · ${u.hours} h</span><h3>${esc(u.title)}</h3><p><b>Claude:</b> ${esc(u.feature)}</p><div class="meta">${isDone(u) ? `<span class="pill done">✓ Complete</span>` : `<span class="pill">${esc(u.subject)}</span>`}</div></a>`).join("") + `</div></section>`;
+  });
+  h += finalBand();
+  h += `<section class="sec" style="--c:#334155"><h3><span class="n">T</span>For trainers and course coordinators</h3><p class="mut">Load participants’ results PDFs to see progress, weak lessons and question analysis. Kept separate from the participant journey.</p><a class="btn" style="--c:#334155" href="${DATA.links.trainer}">Open Trainer View →</a></section>`;
+  h += `<section class="sec" style="--c:#ea580c"><h3><span class="n">⏱</span>Course at a glance</h3><div class="tw"><table><tr><th class="l">Week</th><th class="l">Lesson</th><th class="l">Claude feature</th><th class="l">Use case (field)</th><th>Hours</th></tr>` +
+    W.flatMap(w => w.units.map(u => `<tr><td class="l"><b style="color:${w.c}">${esc(w.short)}</b></td><td class="l">${esc(u.title)}${u.locked ? " 🔒" : ""}</td><td class="l">${u.locked ? "" : esc(u.feature)}</td><td class="l">${u.locked ? "" : esc(u.subject)}</td><td>${u.hours}</td></tr>`)).join("") +
+    `<tr><th class="l" colspan="4">Total</th><th>${hrs}</th></tr></table></div><p class="mut">Suggested pace: one week per calendar week, about ${Math.round(hrs / W.length)} hours each, plus the final review.${DATA.sample ? ` This sample edition opens ${open.length} of ${L.length} lessons.` : ""}</p></section></div>`;
+  return h;
+}
+
+/* lesson page */
+function pageUnit(pid, uid){
+  const w = PART(pid), u = w.units.find(x => x.id === uid);
+  if (!u || u.locked) return pagePart(pid);
+  if (!weekOpen(w)) { pageFinalLocked(w); return null; }
+  let n = 0; const sec = (title, body, id) => `<section class="sec" style="--c:${u.c}"${id ? ` id="${id}"` : ""}><h3><span class="n">${++n}</span>${title}</h3>${body}</section>`;
+  const SK = "claude-course:steps:" + u.id; let st = []; try { st = JSON.parse(localStorage.getItem(SK) || "[]") || []; } catch (e) {}
+  let h = crumbs(baseCrumbs().concat([["C/" + pid, w.short, w.c], ["C/" + pid + "/" + uid, u.code, u.c]])) +
+    `<section class="hero" style="${cssC(u.c, w.c2)}"><h2>${esc(u.code)}: ${esc(u.title)}</h2><div class="chips"><span class="chip">${u.hours} hours</span><span class="chip">${esc(u.subject)}</span><span class="chip">Claude: ${esc(u.feature)}</span></div></section>`;
+  h += sec("What you will be able to do", `<ul class="lo">${u.outcomes.map(o => `<li>${esc(o)}</li>`).join("")}</ul>`);
+  h += sec("The use case", `<div class="ucards"><div><span class="k">Use case</span><p>${esc(u.use)}</p></div><div><span class="k">Hands-on activity</span><p>${esc(u.activity)}</p></div><div><span class="k">Impact on learners and colleagues</span><p>${esc(u.impact)}</p></div></div>`);
+  h += sec(`Do it in Claude: ${esc(u.feature)}`, `<ol class="steps" id="steps">${u.steps.map((s, i) => `<li><label><input type="checkbox" data-st="${i}" ${st[i] ? "checked" : ""}> <span>${esc(s)}</span></label></li>`).join("")}</ol>
+    <p class="mut">Tick each step as you do it. Claude’s menus can change; if a step looks different, check the <a href="${helpLink(u.help)}" target="_blank" rel="noopener">Claude Help Center article ↗</a>.</p>`);
+  h += sec("Key ideas <span class=\"mut\" style=\"font-weight:400\">(tap to open)</span>", `<div class="topics">${u.topics.map(t => `<details class="topic"><summary>${esc(t[0])}</summary><div>${esc(t[1])}</div></details>`).join("")}</div>`);
+  const PL = u.prompts.map(id => DATA.prompts.find(p => p.id === id));
+  h += sec("Prompt templates for this lesson", `<div id="lp">${PL.map((p, k) => promptCard(p, k)).join("")}</div>`);
+  h += sec("Common pitfalls and fixes", `<div class="myths">${u.pitfalls.map(m => `<div class="myth"><p class="x"><b>Pitfall:</b> ${esc(m[0])}</p><p class="y"><b>Instead:</b> ${esc(m[1])}</p></div>`).join("")}</div>`);
+  (u.activities || []).forEach((a, k) => { h += sec("Practice: " + esc(a.title), `<div id="act${k}"></div>`); });
+  h += sec("Lesson quiz", `<p class="mut">Score 60% or more to complete this lesson. Your best score counts.</p><div id="uq"></div>`);
+  h += `<section class="sec" style="--c:${u.c}" id="mstat">${lessonStatus(u)}</section>`;
+  const nb = openL().filter(x => weekOpen(weekOf(x))), j = nb.indexOf(u);
+  h += `<div class="row" style="justify-content:space-between">${j > 0 ? `<a class="btn" style="--c:${nb[j - 1].c}" href="${lessonHref(nb[j - 1].id)}">← ${esc(nb[j - 1].code)}</a>` : "<span></span>"}${j >= 0 && j < nb.length - 1 ? `<a class="btn" style="--c:${nb[j + 1].c}" href="${lessonHref(nb[j + 1].id)}">${esc(nb[j + 1].code)} →</a>` : ""}</div>`;
+  $("#app").innerHTML = h;
+  $("#steps").onchange = e => { const i = e.target.dataset.st; if (i == null) return; st[+i] = e.target.checked; try { localStorage.setItem(SK, JSON.stringify(st)); } catch (er) {} };
+  wirePrompts($("#lp"), PL);
+  (u.activities || []).forEach((a, k) => activity($("#act" + k), a, u.c));
+  quiz($("#uq"), u.quiz, u.c, "C" + u.id);
+  $("#uq").addEventListener("click", () => setTimeout(() => {
+    const best = PROG.quiz["C" + u.id]; if (best == null) return;
+    const f = best / u.quiz.length; if (f > (DONE[u.id] || 0)) { DONE[u.id] = f; saveDone(); }
+    $("#mstat").innerHTML = lessonStatus(u);
+  }, 0));
+  return null;
+}
+function lessonStatus(u){
+  const f = DONE[u.id], n = doneCount(), N = openL().length, w = weekOf(u);
+  if (!isDone(u)) return `<div class="row" style="justify-content:space-between"><span><b>Lesson not yet complete.</b> ${f != null ? `Best score so far ${Math.round(f * 100)}%. ` : ""}Pass the quiz with 60% or more.</span><span class="mut">${n} of ${N} lessons complete</span></div>`;
+  if (allDone()) return `<div class="row" style="justify-content:space-between"><span class="okc">✓ Lesson complete. All ${N} lessons are complete: the final review is unlocked.</span><a class="btn p" style="--c:${u.c}" href="#/C/final">Start the final review →</a></div>`;
+  const nx = openL().find(x => !isDone(x) && weekOpen(weekOf(x)));
+  const wk = weekDone(w) ? ` ${esc(w.short)} complete${nx && weekOf(nx) !== w ? `: ${esc(weekOf(nx).short)} is now open` : ""}.` : "";
+  return `<div class="row" style="justify-content:space-between"><span class="okc">✓ Lesson complete (${Math.round(f * 100)}%).${wk} ${n} of ${N} lessons complete.</span>${nx ? `<a class="btn p" style="--c:${nx.c}" href="${lessonHref(nx.id)}">Next: ${esc(nx.code)} →</a>` : ""}</div>`;
+}
+function pageFinalLocked(w){
+  const prev = weeks()[weeks().indexOf(w) - 1];
+  $("#app").innerHTML = crumbs(baseCrumbs().concat([["C/" + w.id, w.short, w.c]])) + `<section class="hero" style="${cssC(w.c, w.c2)}"><h2>${esc(w.title)}</h2><p>This week opens after ${esc(prev.short)} is complete.</p></section>
+    <section class="sec" style="--c:${prev.c}"><h3><span class="n">🔒</span>Complete ${esc(prev.short)} first</h3><div class="maps">${prev.units.filter(x => !x.locked).map(x => `<a class="mapc" href="${lessonHref(x.id)}" style="--k:${x.c}"><span class="cl">${isDone(x) ? "✓" : "…"}</span><div><b>${esc(x.code)} ${esc(x.title)}</b><p>${isDone(x) ? "Complete" : "Pass the lesson quiz (60%)"}</p></div></a>`).join("")}</div></section>`;
+}
+
+/* week page: lessons with locks */
+const _pagePart = pagePart;
+pagePart = function(pid){
+  const p = PART(pid);
+  if (p.units && !weekOpen(p)) { pageFinalLocked(p); return null; }
+  return _pagePart(pid);
+};
+
+/* prompt library */
+function pageLibrary(){
+  const P = DATA.prompts;
+  $("#app").innerHTML = crumbs(baseCrumbs().concat([["C/library", "Prompt Library", "#2563eb"]])) +
+    `<section class="hero" style="${cssC("#2563eb", "#7c3aed")}"><h2>Prompt Library</h2><p>${P.length} templates from the course, adapted for higher education and the workplace. Fill in the blanks, copy, and paste into Claude.</p></section>
+    <div class="row" style="margin-bottom:10px;--c:#2563eb"><button class="btn p" data-f="">All</button>${weeks().map(w => `<button class="btn" data-f="${w.id}" style="--c:${w.c}">${esc(w.short)}</button>`).join("")}</div>
+    <div id="lib">${P.map((p, k) => { const u = lessonById(p.lesson), w = u ? weekOf(u) : null; return `<div data-w="${w ? w.id : ""}" class="libw">${promptCard(p, k)}<p class="mut" style="margin:-6px 0 14px">From <a href="${lessonHref(p.lesson)}">${esc(u ? u.code + " · " + u.title : "")}</a></p></div>`; }).join("")}</div>`;
+  wirePrompts($("#lib"), P);
+  $("#app").querySelector(".row").onclick = e => { const b = e.target.closest("[data-f]"); if (!b) return; const f = b.dataset.f;
+    $("#app").querySelectorAll(".row [data-f]").forEach(x => x.classList.toggle("p", x === b));
+    document.querySelectorAll(".libw").forEach(d => d.hidden = !!f && d.dataset.w !== f); };
+}
+/* feature guide */
+function pageFeatures(){
+  const mark = v => v === "Y" ? `<span class="okc" aria-label="yes">✓</span>` : v === "P" ? `<span class="part">Limited</span>` : `<span class="mut" aria-label="no">–</span>`;
+  $("#app").innerHTML = crumbs(baseCrumbs().concat([["C/features", "Feature guide", "#7c3aed"]])) +
+    `<section class="hero" style="${cssC("#7c3aed", "#db2777")}"><h2>Claude feature guide</h2><p>Where each feature lives, which plans include it, and the lesson that teaches it. Based on the Claude Help Center (checked October 2026). Plans and menus change: always confirm on the Help Center.</p></section>
+    <section class="sec" style="--c:#7c3aed"><div class="tw"><table class="feat"><tr><th class="l">Feature</th><th class="l">Where to find it</th>${DATA.plans.map(p => `<th>${p}</th>`).join("")}<th class="l">Notes</th><th class="l">Learn it</th></tr>
+    ${DATA.features.map(f => `<tr><td class="l"><b>${esc(f.f)}</b></td><td class="l">${esc(f.where)}</td>${f.plans.map(v => `<td>${mark(v)}</td>`).join("")}<td class="l">${esc(f.note)} <a href="${helpLink(f.help)}" target="_blank" rel="noopener">Help ↗</a></td><td class="l"><a href="${lessonHref(f.lesson)}">${esc((lessonById(f.lesson) || {}).code || "")}</a></td></tr>`).join("")}</table></div>
+    <p class="mut">✓ included · Limited: see notes · – not included. Team and Enterprise owners can turn some features off for their organisation.</p></section>`;
+}
+
+/* final stage: mind map then adaptive assessment, after every lesson */
+function finalBand(){
+  const ok = allDone(), left = openL().filter(u => !isDone(u));
+  return `<section class="final ${ok ? "open" : "shut"}" id="final"><div class="fh"><span class="tn">${ok ? "✓" : "🔒"}</span><div><span class="k">After Week 4 · administered once all lessons are complete</span><h3>Final review, assessment and certificate</h3>
+    <p>${ok ? "All lessons are complete. Review the course mind map, then take the adaptive assessment. Pass it to download your certificate." : `Unlocks when every lesson is complete. ${left.length} lesson${left.length === 1 ? "" : "s"} to go.`}</p></div></div>
+    <div class="grid">${[["#/C/map", "#d97706", "#ca8a04", "Step 1 · Review", "Course mind map", "Every week, lesson, Claude feature, key idea and prompt in one colour-coded map."],
+      [DATA.links.test, "#0891b2", "#0d9488", "Step 2 · Assess", "Adaptive assessment", "Questions adapt to you. Download only your results to send to your trainer, and your certificate when you pass."]]
+      .map(t => ok ? `<a class="card" href="${t[0]}" style="${cssC(t[1], t[2])}"><span class="k">${t[3]}</span><h3>${t[4]}</h3><p>${t[5]}</p><div class="meta"><span class="pill">Open</span></div></a>`
+                   : `<div class="card lock" style="${cssC(t[1], t[2])}"><span class="k">${t[3]}</span><h3>${t[4]}</h3><p>${t[5]}</p><div class="meta"><span class="pill">🔒 After all lessons</span></div></div>`).join("")}</div></section>`;
+}
+function pageFinal(){
+  $("#app").innerHTML = crumbs(baseCrumbs().concat([["C/final", "Final review", "#0891b2"]])) +
+    `<section class="hero" style="${cssC("#0891b2", "#0d9488")}"><h2>Final review and assessment</h2><p>Administered after all four weeks: first the mind map, then the adaptive assessment and your certificate.</p><div class="chips"><span class="chip">${doneCount()} of ${openL().length} lessons complete</span></div></section>` +
+    finalBand() + (allDone() ? "" : `<section class="sec" style="--c:#0891b2"><h3><span class="n">✓</span>Lessons to complete</h3><div class="maps">${openL().map(u => `<a class="mapc" href="${lessonHref(u.id)}" style="--k:${u.c}"><span class="cl">${isDone(u) ? "✓" : esc(weekOf(u).short.replace("Week ", "W"))}</span><div><b>${esc(u.code)} ${esc(u.title)}</b><p>${isDone(u) ? `Complete (${Math.round(DONE[u.id] * 100)}%)` : DONE[u.id] != null ? `Best ${Math.round(DONE[u.id] * 100)}%: needs 60%` : weekOpen(weekOf(u)) ? "Not started" : "Week not open yet"}</p></div></a>`).join("")}</div></section>`);
+}
+
+/* mind map: week → lesson → Claude steps, key ideas, prompts */
+buildTree = function(){
+  const X = CO(), node = (t, c, kids, route) => ({t, c, kids: kids || [], route, open: false});
+  const parts = X.parts.map(p => {
+    let kids;
+    if (p.units) kids = p.units.map(u => node(`${u.code}: ${u.title}` + (u.locked ? " 🔒" : ""), u.c, u.locked ? [] : [
+      node("Claude: " + u.feature, u.c, u.steps.map((s, i) => node(`${i + 1}. ${s}`, u.c))),
+      node("Key ideas", u.c, u.topics.map(t => node(t[0], u.c))),
+      node("Prompts", u.c, u.prompts.map(id => node((DATA.prompts.find(q => q.id === id) || {}).task || id, u.c)))], u.locked ? null : `C/${p.id}/${u.id}`));
+    else kids = p.labs.map(l => node(l.title + (l.locked ? " 🔒" : ""), l.c, l.locked ? [] : l.assess.map(a => node(a, l.c)), l.locked ? null : `C/${p.id}/${l.id}`));
+    return node(p.title, p.c, kids, `C/${p.id}`);
+  });
+  const root = node(X.mapTitle, "#ea580c", parts, "C");
+  root.open = true; parts.forEach(p => p.open = true);
+  return root;
+};
+const _pageMap = pageMap;
+pageMap = () => _pageMap().replace("Parts only", "Weeks only").replace("Show units", "Show lessons").replace("Show topics", "Show details").replace("that unit or lab", "that lesson");
+
+/* studio lab page: add facilitation tips */
+const _pageLab = pageLab;
+pageLab = function(pid, lid){
+  const r = _pageLab(pid, lid), l = PART(pid).labs.find(x => x.id === lid);
+  if (l && !l.locked && l.tips) {
+    const first = $("#app").querySelector("section.sec");
+    if (first) first.insertAdjacentHTML("beforebegin", `<section class="sec" style="--c:${l.c}"><h3><span class="n">★</span>Tips</h3><ul class="lo">${l.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul></section>`);
+    const ah = [...$("#app").querySelectorAll("section.sec h3")].find(x => /Assessment points/.test(x.textContent));
+    if (ah) { ah.lastChild.textContent = "Skills checklist"; ah.nextElementSibling.textContent = "Tick each point when you can do it confidently."; }
+    const vh = [...$("#app").querySelectorAll("section.sec h3")].find(x => /Viva voce/.test(x.textContent));
+    if (vh) vh.lastChild.textContent = "Check your understanding";
+  }
+  return r;
+};
+
+/* router */
+const _render = render;
+render = function(){
+  const r = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+  if (r[0] !== "C") r.unshift("C");
+  const pages = {library: pageLibrary, features: pageFeatures, final: pageFinal};
+  if (pages[r[1]] || (r[1] === "map" && !allDone())) { CID = "C"; (pages[r[1]] || pageFinal)(); window.scrollTo(0, 0); return; }
+  _render();
+};
+window.removeEventListener("hashchange", _render);
+window.addEventListener("hashchange", () => render());
+
+/* guard.js : discourages casual copying and printing of these pages.
+   Disables: right-click, text selection, copy/cut, drag, print, and the
+   keyboard shortcuts for save, print, view-source and developer tools.
+   Typing in boxes (search, readings, answers) keeps working normally.
+   Note: this is a deterrent for ordinary users. It cannot stop screenshots,
+   "view source", or downloading the repository (see the notes in the chat).
+   Version 2 (Oct 2026): runs only once per page, even if a page loads it twice
+   (the AI Education pages carry their own copy inside the file). */
+(function () {
+  'use strict';
+  if (window.__mmpGuard) return;
+  window.__mmpGuard = 2;
+
+  var FIELDS = 'input,textarea,select,[contenteditable="true"]';
+
+  var css = document.createElement('style');
+  css.textContent =
+    'html,body{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none}' +
+    FIELDS + '{-webkit-user-select:text;-moz-user-select:text;user-select:text}' +
+    'img,svg{-webkit-user-drag:none}' +
+    '@media print{html{display:none!important}}';
+  (document.head || document.documentElement).appendChild(css);
+
+  function inField(t) {
+    if (t && t.nodeType === 3) t = t.parentElement;
+    return !!(t && t.closest && t.closest(FIELDS));
+  }
+
+  /* right-click, copy, cut, drag, start of a text selection */
+  ['contextmenu', 'copy', 'cut', 'dragstart', 'selectstart'].forEach(function (name) {
+    document.addEventListener(name, function (e) {
+      if (!inField(e.target)) e.preventDefault();
+    }, true);
+  });
+
+  /* keyboard shortcuts */
+  document.addEventListener('keydown', function (e) {
+    var k = (e.key || '').toLowerCase();
+    var mod = e.ctrlKey || e.metaKey;
+    var always =
+      e.key === 'F12' ||
+      (mod && (k === 'p' || k === 's' || k === 'u')) ||                  /* print, save, view source */
+      (mod && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) ||     /* developer tools */
+      (e.metaKey && e.altKey && (k === 'i' || k === 'j' || k === 'u'));   /* same on a Mac */
+    var outsideFields = mod && (k === 'a' || k === 'c' || k === 'x') && !inField(e.target);
+    if (always || outsideFields) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  /* printing from the browser menu: hide the page while the print preview is made */
+  window.addEventListener('beforeprint', function () { document.documentElement.style.display = 'none'; });
+  window.addEventListener('afterprint', function () { document.documentElement.style.display = ''; });
+})();
+
+render();
+
+</script>
+</body>
+</html>

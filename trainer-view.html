@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trainer View · Working with Claude (Sample)</title>
+<style>
+:root{--bg:#fff7ed;--card:#fff;--ink:#3a1f0b;--mut:#8a6a52;--acc:#ea580c;--line:#fde0c5;--ok:#15803d;--no:#b91c1c;--soft:#fff1e2}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1410;--card:#241c16;--ink:#f5e9df;--mut:#b9a392;--acc:#fb923c;--line:#3a2d23;--ok:#4ade80;--no:#f87171;--soft:#2c221b}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+.sample{background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:7px 14px;font-size:13px;text-align:center}
+header{padding:12px 16px;background:linear-gradient(90deg,#0f766e,#4338ca);color:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1;min-width:200px}
+header h1 small{display:block;font-size:12px;font-weight:400;opacity:.9}
+a.btn,button{font:inherit;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:8px;text-decoration:none}
+button:hover,a.btn:hover{border-color:var(--acc)}
+button:focus-visible,a:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+button.on,button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+button:disabled{opacity:.45;cursor:default}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;max-width:1200px;width:100%;margin:14px auto 0;padding:0 16px}
+main{flex:1;max-width:1200px;width:100%;margin:0 auto;padding:14px 16px 24px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;min-width:0}
+.panel h2{font-size:17px;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:24px;color:var(--acc)}
+.kpi span{font-size:12px;color:var(--mut)}
+.mut{color:var(--mut);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--soft);position:sticky;top:0}
+.tw{overflow:auto;max-height:520px}
+.cell{text-align:center;color:#fff;font-weight:600;min-width:34px}
+.flag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:11px;color:#fff;margin:1px 3px 1px 0}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) 90px;gap:8px;align-items:center;font-size:13px}
+.bar .bt{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar .bt span{display:block;height:100%}
+.bar .bv{text-align:right}
+.bar .bv small{color:var(--mut)}
+@media(max-width:520px){.bar{grid-template-columns:minmax(0,120px) minmax(0,1fr) 70px}}
+.drop{border:2px dashed var(--acc);border-radius:12px;padding:18px;text-align:center;background:var(--soft)}
+footer{padding:14px;text-align:center;font-size:13px;color:var(--mut);border-top:1px solid var(--line);background:var(--card)}
+</style>
+</head>
+<body>
+<div class="sample">Sample edition: the trainer view for the sample assessment. Use <i>Try with a demo class</i> to explore it.</div>
+<header>
+  <h1>Trainer View · Working with Claude<small>Load participants’ PDF reports · class analytics · item analysis · question validation</small></h1>
+    <a class="btn" href="index.html">&larr; Course lessons</a>
+</header>
+<div id="topics" style="max-width:1200px;width:100%;margin:14px auto 0;padding:0 16px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+<nav class="tabs" role="tablist">
+  <button data-tab="class" role="tab">Class overview</button>
+  <button data-tab="topics" role="tab">Topic mastery</button>
+  <button data-tab="items" role="tab">Item analysis</button>
+  <button data-tab="valid" role="tab">Question validation</button>
+</nav>
+<main id="view" aria-live="polite"></main>
+<footer>Files you load stay on this computer; nothing is uploaded. Close the page to clear them.</footer>
+<input type="file" id="files" accept=".pdf,.json,application/pdf,application/json" multiple hidden>
+<script>
+const ALL = {"topics": [{"topic": "claude-course", "sample": true, "km": {"kind": "curriculum", "nodes": [{"id": "w1s1", "name": "Simplify complex concepts with clear prompts", "formula": "W1 · Step 1", "short": "W1 · Step 1 Simplify complex concepts with clear prompts", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["Prompt anatomy", "A strong prompt states the role, the task, the audience, the context, the output format and any constraints such as length or tone."], ["Iteration", "Treat the first answer as a draft. Ask for one specific change per follow-up rather than rewriting the whole request."], ["Audience calibration", "Naming the audience and their prior knowledge changes vocabulary, examples and depth more than any other single instruction."], ["Analogy check", "An analogy helps only if it maps the key relationship correctly; ask where the analogy breaks down."], ["Verification", "Fluent text can still be wrong. Check definitions, numbers and claims against a trusted source before teaching or publishing."]], "sorts": [], "viva": [], "href": "index.html#/C/W1/w1s1"}, {"id": "w1s2", "name": "Generate problem sets and files with answer keys", "formula": "W1 · Step 2", "short": "W1 · Step 2 Generate problem sets and files with answer keys", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["File creation", "With code execution turned on, Claude can create and edit Excel, Word, PowerPoint and PDF files and offer them for download."], ["Capabilities setting", "Code execution and file creation is switched on or off under Settings → Capabilities; organisations can control it for Team and Enterprise plans."], ["Formula-based keys", "Answers calculated by spreadsheet formulas update automatically when a value changes, which reduces copying errors."], ["Uploading data", "You can upload CSV, spreadsheet and other data files for Claude to analyse, clean, chart or turn into new documents."], ["Human check", "Always recompute a sample of answers yourself; a wrong formula produces confident wrong numbers."]], "sorts": [{"title": "Which output format fits?", "buckets": ["Excel (.xlsx)", "Word (.docx)", "PowerPoint (.pptx)", "PDF"], "items": [["A budget model with formulas", 0], ["A grade calculator learners can reuse", 0], ["An editable handout for colleagues", 1], ["A policy draft with tracked changes", 1], ["A 10-slide briefing", 2], ["Lecture slides with speaker notes", 2], ["A fixed, printable exam paper", 3], ["A certificate that must not change", 3]]}], "viva": [], "href": "index.html#/C/W1/w1s2"}, {"id": "w1s3", "name": "Build interactive tools with artifacts", "formula": "W1 · Step 3", "short": "W1 · Step 3 Build interactive tools with artifacts", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["Artifact", "An artifact is something Claude makes for you that you would put in front of someone: a document, deck, design, dashboard or interactive tool, shown in a side panel."], ["Iterating an artifact", "You change an artifact by asking for edits in the chat; Claude updates it and keeps earlier versions."], ["Versions", "Each update creates a new version, and you can go back to an earlier one if a change made things worse."], ["Interactive tools", "Artifacts can be small working apps such as calculators, simulators, quizzes and trackers that run in the browser."], ["Testing with known answers", "Check a tool with inputs whose correct output you already know before giving it to others."]], "sorts": [], "viva": [], "href": "index.html#/C/W1/w1s3"}, {"id": "s1", "name": "Prompt Studio", "formula": "Tool 1", "short": "Prompt Studio", "L": "Practice Studio", "pri": "core", "roles": ["S"], "topics": [], "sorts": [], "viva": [["Which part of a prompt changes depth the most?", "Naming the audience and what they already know."], ["Why iterate instead of starting again?", "Targeted follow-ups refine a good draft faster and keep what already works."]], "href": "index.html#/C/S/s1"}, {"id": "s2", "name": "Artifact Planner", "formula": "Tool 2", "short": "Artifact Planner", "L": "Practice Studio", "pri": "core", "roles": ["S"], "topics": [], "sorts": [], "viva": [["When would you pick Excel over a Docs artifact?", "When the content needs formulas or calculations that update."], ["What is the difference between publish and share?", "Publishing makes a public link viewable without an account; sharing gives chosen people or link holders view or edit access, and they need a Claude account."]], "href": "index.html#/C/S/s2"}], "roles": {"W1": "Week 1", "W2": "Week 2", "W3": "Week 3", "W4": "Week 4", "S": "Practice Studio"}, "groups": ["Week 1", "Week 2", "Week 3", "Week 4", "Practice Studio"], "groupNames": {"Week 1": "Week 1: STEM and technical fields", "Week 2": "Week 2: Arts, humanities and communication", "Week 3": "Week 3: Commerce, business and management", "Week 4": "Week 4: Cross-disciplinary work and responsible use", "Practice Studio": "Practice Studio"}}, "authored": [{"id": "Q:w1s1:0", "nodes": ["w1s1"], "diff": 2, "stem": "Which addition usually improves an explanation the most?", "ans": "Naming the audience and what they already know", "opts": ["Asking Claude to be smart", "Naming the audience and what they already know", "Using capital letters", "Adding \"please\" twice"], "exp": "Audience and prior knowledge drive vocabulary and depth."}, {"id": "Q:w1s1:1", "nodes": ["w1s1"], "diff": 2, "stem": "The first reply is too long. The best next step is to", "ans": "reply with a specific change such as \"cut to 80 words\"", "opts": ["start a new chat", "reply with a specific change such as \"cut to 80 words\"", "accept it", "paste the same prompt again"], "exp": "Targeted follow-ups refine a draft efficiently."}, {"id": "Q:w1s1:2", "nodes": ["w1s1"], "diff": 2, "stem": "Why ask where an analogy breaks down?", "ans": "Because analogies can mislead if they map the wrong relationship", "opts": ["To make the answer longer", "Because analogies can mislead if they map the wrong relationship", "It is required by Claude", "To avoid citations"], "exp": "Every analogy has limits; knowing them prevents misconceptions."}, {"id": "Q:w1s1:3", "nodes": ["w1s1"], "diff": 2, "stem": "Before using an AI explanation in class or a report you should", "ans": "check its claims against a trusted source", "opts": ["check its claims against a trusted source", "remove the analogy", "translate it", "nothing"], "exp": "Fluency is not accuracy."}, {"id": "Q:w1s1:4", "nodes": ["w1s1"], "diff": 2, "stem": "Editing your own earlier message in a chat lets you", "ans": "branch and compare a different version of the prompt", "opts": ["delete Claude", "branch and compare a different version of the prompt", "publish the chat", "turn on memory"], "exp": "Editing a prompt creates a new branch of the conversation."}, {"id": "Q:w1s2:0", "nodes": ["w1s2"], "diff": 2, "stem": "Where do you turn on file creation in Claude?", "ans": "Settings → Capabilities", "opts": ["Settings → Capabilities", "Projects → Knowledge", "The artifact Share menu", "Memory"], "exp": "Code execution and file creation lives under Capabilities."}, {"id": "Q:w1s2:1", "nodes": ["w1s2"], "diff": 2, "stem": "Why ask for answers calculated by formula?", "ans": "They stay correct when inputs change", "opts": ["They look better", "They stay correct when inputs change", "Claude requires it", "It makes the file smaller"], "exp": "Formulas recalculate automatically."}, {"id": "Q:w1s2:2", "nodes": ["w1s2"], "diff": 2, "stem": "Which is NOT a format Claude can create with file creation?", "ans": "A physical printed book", "opts": ["Excel", "Word", "PowerPoint", "A physical printed book"], "exp": "Claude creates digital files."}, {"id": "Q:w1s2:3", "nodes": ["w1s2"], "diff": 2, "stem": "After receiving a problem-set file you should", "ans": "check a sample of answers yourself", "opts": ["check a sample of answers yourself", "publish it immediately", "delete the formulas", "convert it to an image"], "exp": "A wrong formula can produce confident wrong answers."}, {"id": "Q:w1s2:4", "nodes": ["w1s2"], "diff": 2, "stem": "You have a CSV of survey results. Claude can", "ans": "analyse it and create a summary sheet or chart", "opts": ["only read the file name", "analyse it and create a summary sheet or chart", "not open CSV files", "only translate it"], "exp": "Uploaded data files can be analysed and transformed."}, {"id": "Q:w1s3:0", "nodes": ["w1s3"], "diff": 2, "stem": "An artifact is best described as", "ans": "something Claude makes that you would put in front of someone, shown in a side panel", "opts": ["a chat message", "something Claude makes that you would put in front of someone, shown in a side panel", "a settings page", "a type of memory"], "exp": "Artifacts are standalone outputs: documents, decks, designs, tools."}, {"id": "Q:w1s3:1", "nodes": ["w1s3"], "diff": 2, "stem": "A change made your artifact worse. You can", "ans": "return to an earlier version", "opts": ["only start again", "return to an earlier version", "delete your account", "turn on research"], "exp": "Artifacts keep versions."}, {"id": "Q:w1s3:2", "nodes": ["w1s3"], "diff": 2, "stem": "The most reliable way to build an interactive tool is", "ans": "build the core, then add one feature at a time", "opts": ["ask for every feature at once", "build the core, then add one feature at a time", "paste code from elsewhere", "avoid testing"], "exp": "Small steps are easier to check."}, {"id": "Q:w1s3:3", "nodes": ["w1s3"], "diff": 2, "stem": "Before sharing a calculator artifact you should", "ans": "test it with inputs whose answer you know", "opts": ["test it with inputs whose answer you know", "remove the labels", "turn off file creation", "shorten its name"], "exp": "Known-answer tests catch formula errors."}, {"id": "Q:w1s3:4", "nodes": ["w1s3"], "diff": 2, "stem": "Which is an example of an interactive artifact?", "ans": "A grade calculator", "opts": ["A grade calculator", "A memory summary", "A connector", "An incognito chat"], "exp": "Artifacts can be working tools."}], "ui": {"title": "Working with Claude", "noun": "lesson", "nouns": "lessons", "Noun": "Lesson", "diag": "Up to 12 questions spread across the whole course", "labHref": "", "openText": "Open the lesson", "practiceFile": "course-assessment.html", "h1": "Adaptive Assessment · Working with Claude", "links": "<a class=\"btn\" href=\"index.html\">Course lessons<\/a>\n  <a class=\"btn\" href=\"trainer-view.html\">Trainer view<\/a>", "back": "index.html", "kmText": "5 nodes: 3 lessons and 2 studio tools, grouped by week. Each lesson carries its key ideas, sorting activities and quiz; each tool its check questions.", "genText": "Templates turn every key idea, sorting activity and check question of the course into questions: name the concept from its description, choose the right meaning of a term, sort an example into its group, and answer viva questions. Wrong options come from the same lesson first, so they are close but clearly different."}}]};
+let DATA = ALL.topics[0];
+/* =====================================================================
+   MMP learning engine (shared by practice.html and teacher.html)
+   Layers: Knowledge Map · Question Bank · AI Question Generator ·
+           Validation Engine · Student Knowledge Model · Adaptive Engine ·
+           Revision Engine · Response Analytics
+   ===================================================================== */
+let KM, NODE, LETTERS, AV, BANK, QBY, UI;           /* set by setTopic(): one topic (knowledge map + bank) at a time */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const norm = s => String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[₀-₉]/g, d => "0123456789"["₀₁₂₃₄₅₆₇₈₉".indexOf(d)]).replace(/[⁺⁻²³]/g, "").replace(/\s+/g, " ").trim();
+const bare = s => norm(String(s).replace(/\([^)]*\)/g, ""));
+const STOP = new Set("and the then with from into salt compound mixture higher pure other one fewer carbon ion group product products solution precipitate white yellow orange dye any via".split(" "));
+const SYN = {carboxylate: "carboxylic", carboxylat: "carboxylic", phenoxide: "phenoxide", haloarene: "halide", alkoxide: "alkoxide", chloride: "halide", bromide: "halide", iodide: "halide", fluoride: "halide"};
+const toks = s => new Set(bare(s).split(/[^a-z0-9°]+/).filter(w => w.length >= 3 && !STOP.has(w)).map(w => w.length > 4 ? w.replace(/(es|s)$/, "") : w).map(w => SYN[w] || w));
+const overlap = (a, b) => { const A = toks(a); for (const w of toks(b)) if (A.has(w)) return true; return false; };
+const sameStart = (a, b) => { const x = bare(a), y = bare(b); return x === y || x.includes(y) || y.includes(x); };
+const PAL = ["#e11d48", "#ea580c", "#ca8a04", "#16a34a", "#0d9488", "#0891b2", "#2563eb", "#4f46e5", "#7c3aed", "#c026d3", "#db2777", "#b45309"];
+const LC = L => PAL[LETTERS.indexOf(L) % PAL.length];
+const PRIW = {core: 1, imp: .8, sup: .5};
+const TYPE = {G1: "Which reagent?", G2: "What forms?", G3: "Observation", G4: "Named reaction → reagent", G5: "Reagent → named reaction", A: "Concept (authored)",
+  C1: "Name the concept", C2: "Meaning of a term", C3: "Sort it", C4: "Viva"};
+
+/* seeded random, so a generated question always has the same options (stable for analytics) */
+function seeded(str){ let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+const sshuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lead = f => norm(f).replace(/^(conc\.|dil\.|cold|hot|anhydrous)\s*/, "").split(/[ \/,+(]/)[0];
+/* reagents that can do the same job (or are the same chemical with other conditions) are never used as wrong options */
+const canDo = (x, u) => x.uses.some(v => sameStart(v[0], u[0]) && overlap(v[1], u[1]));
+const unsafe = (x, r, u) => x === r || canDo(x, u) || AV.has(x.id + "|" + r.id) || KM.nodes.some(c => (c === r || canDo(c, u)) && lead(c.formula) === lead(x.formula));
+const roleShare = (a, b) => a.roles.filter(k => b.roles.includes(k)).length;
+
+/* ---------- AI Question Generator (rule-based templates over the knowledge map) ---------- */
+function generate(){
+  const Q = [], N = KM.nodes;
+  N.forEach(r => r.uses.forEach((u, k) => {
+    const id1 = `G1:${r.id}:${k}`, R1 = seeded(id1);
+    const d1 = sshuffle(N.filter(x => !unsafe(x, r, u)), R1).sort((a, b) => roleShare(b, r) - roleShare(a, r)).slice(0, 3);
+    Q.push({id: id1, type: "G1", nodes: [r.id], diff: r.pri === "core" ? 1 : 2, stem: `Which reagent converts <b>${esc(u[0])}</b> → <b>${esc(u[1])}</b>?`,
+      ans: `${r.formula} (${r.name})`, opts: [r, ...d1].map(x => `${x.formula} (${x.name})`), exp: `${r.formula}: ${u[0]} → ${u[1]}${u[2] ? " (" + u[2] + ")" : ""}.`});
+    const id2 = `G2:${r.id}:${k}`, R2 = seeded(id2), twin = r.uses.filter(v => sameStart(v[0], u[0])).length > 1;
+    const own = r.uses.filter(v => sameStart(v[0], u[0])).map(v => v[1]);
+    const pool = [], seenB = new Set([bare(u[1]), bare(u[0])]);
+    N.flatMap(x => x.uses.map(v => v[1])).forEach(p => { const b = bare(p); if (seenB.has(b) || [...seenB].some(o => o.includes(b) || b.includes(o)) || own.some(o => overlap(o, p)) || overlap(p, u[1])) return; seenB.add(b); pool.push(p); });
+    Q.push({id: id2, type: "G2", nodes: [r.id], diff: 2, stem: `<b>${esc(u[0])}</b> is treated with <b>${esc(r.formula)}</b>${twin && u[2] ? ` (${esc(u[2])})` : ""}. What forms?`,
+      ans: u[1], opts: [u[1], ...sshuffle(pool, R2).slice(0, 3)], exp: `${u[0]} + ${r.formula} → ${u[1]}${u[2] ? " (" + u[2] + ")" : ""}.`});
+  }));
+  N.filter(r => r.obs).forEach(r => {
+    const id = `G3:${r.id}`, R = seeded(id), d = sshuffle(N.filter(x => x !== r && x.obs && !overlap(x.obs, r.obs)), R).slice(0, 3);
+    Q.push({id, type: "G3", nodes: [r.id], diff: 1, stem: `Which reagent gives this observation? <i>“${esc(r.obs)}”</i>`, ans: r.formula, opts: [r, ...d].map(x => x.formula), exp: `${r.name} (${r.formula}): ${r.obs}`});
+  });
+  const named = {}; N.forEach(r => r.named.forEach(n => (named[n] = named[n] || []).push(r)));
+  Object.entries(named).forEach(([n, rs]) => {
+    const r = rs[0], id = `G4:${n}`, R = seeded(id), d = sshuffle(N.filter(x => !rs.includes(x) && !x.named.includes(n)), R).sort((a, b) => roleShare(b, r) - roleShare(a, r)).slice(0, 3);
+    Q.push({id, type: "G4", nodes: [r.id], diff: 2, stem: `Which reagent is used in the <b>${esc(n)}</b>?`, ans: r.formula, opts: [r, ...d].map(x => x.formula), exp: `${n}: ${r.formula} (${r.name}).`});
+  });
+  N.filter(r => r.named.length).forEach(r => {
+    const n = r.named[0], id = `G5:${r.id}`, R = seeded(id), d = sshuffle(Object.keys(named).filter(m => !r.named.includes(m)), R).slice(0, 3);
+    Q.push({id, type: "G5", nodes: [r.id], diff: 2, stem: `<b>${esc(r.formula)}</b> is the key reagent in which named reaction?`, ans: n, opts: [n, ...d], exp: `${r.formula} (${r.name}): ${r.named.join(", ")}.`});
+  });
+  return Q;
+}
+
+/* ---------- AI Question Generator for curriculum topics (units, concepts, sorting activities, viva) ---------- */
+const jacc = (a, b) => { const A = toks(a), B = toks(b); if (!A.size || !B.size) return 0; let i = 0; B.forEach(w => { if (A.has(w)) i++; }); return i / (A.size + B.size - i); };
+const firstSentence = t => { const m = String(t).match(/^(.{40,}?[.!?])(\s|$)/); const x = m ? m[1] : String(t); return x.length > 170 ? x.slice(0, 167).replace(/\s+\S*$/, "") + " …" : x; };
+function mask(text, title){ let t = String(text); [title, String(title).replace(/\([^)]*\)/g, "").trim()].filter(x => x.length > 2).forEach(x => { t = t.replace(new RegExp(x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "_____"); }); return t; }
+function generateCurriculum(){
+  const Q = [], N = KM.nodes, all = N.flatMap(n => (n.topics || []).map((t, k) => ({n, t, k}))), viva = N.flatMap(n => (n.viva || []).map((v, k) => ({n, v, k})));
+  const distinct = (arr, ans, f, sim) => { const out = [], seen = [bare(ans)], seenT = [ans]; for (const x of arr) { const t = f(x), b = bare(t); if (!b || seen.some(y => y === b || y.includes(b) || b.includes(y)) || (sim && seenT.some(y => jacc(y, t) >= .3))) continue; seen.push(b); seenT.push(t); out.push(x); } return out; };
+  all.forEach(({n, t, k}) => {
+    const id1 = `C1:${n.id}:${k}`, R1 = seeded(id1), same = sshuffle(all.filter(x => x.n === n && x.k !== k), R1), other = sshuffle(all.filter(x => x.n !== n && x.n.L === n.L), R1);
+    const shown = norm(mask(t[1], t[0])), d1 = distinct(same.concat(other).filter(x => !(norm(x.t[0]).length > 3 && shown.includes(norm(x.t[0])))), t[0], x => x.t[0]).slice(0, 3);
+    Q.push({id: id1, type: "C1", nodes: [n.id], diff: 1, stem: `Which concept is this? <i>“${esc(mask(t[1], t[0]))}”</i>`, ans: t[0], opts: [t[0], ...d1.map(x => x.t[0])], exp: `${t[0]}: ${t[1]}`});
+    const id2 = `C2:${n.id}:${k}`, R2 = seeded(id2), d2 = distinct(sshuffle(all.filter(x => x.n === n && x.k !== k), R2).concat(sshuffle(all.filter(x => x.n !== n), R2)), firstSentence(t[1]), x => firstSentence(x.t[1]), true).slice(0, 3);
+    Q.push({id: id2, type: "C2", nodes: [n.id], diff: 2, stem: `Which statement best describes <b>${esc(t[0])}</b>?`, ans: firstSentence(t[1]), opts: [firstSentence(t[1]), ...d2.map(x => firstSentence(x.t[1]))], exp: `${t[0]}: ${t[1]}`});
+  });
+  N.forEach(n => (n.sorts || []).forEach((a, j) => a.items.forEach(([item, b], k) => {
+    Q.push({id: `C3:${n.id}:${j}:${k}`, type: "C3", nodes: [n.id], diff: 1, stem: `<b>${esc(a.title)}</b><br>Where does “${esc(item)}” belong?`, ans: a.buckets[b], opts: a.buckets.slice(), exp: `“${item}” → ${a.buckets[b]}.`, sort: [n.id, j], item});
+  })));
+  viva.forEach(({n, v, k}) => {
+    const id = `C4:${n.id}:${k}`, R = seeded(id), d = distinct(sshuffle(viva.filter(x => x.n === n && x.k !== k), R).concat(sshuffle(viva.filter(x => x.n !== n), R)), firstSentence(v[1]), x => firstSentence(x.v[1]), true).slice(0, 3);
+    Q.push({id, type: "C4", nodes: [n.id], diff: 2, stem: `Viva: <b>${esc(v[0])}</b>`, ans: firstSentence(v[1]), opts: [firstSentence(v[1]), ...d.map(x => firstSentence(x.v[1]))], exp: v[1]});
+  });
+  return Q;
+}
+
+/* ---------- Validation Engine: every question is checked before it can be shown ---------- */
+function validate(q){
+  const fail = [], warn = [];
+  if (!q.stem || !q.ans) fail.push("missing stem or answer");
+  const minO = q.type === "A" || q.type === "C3" ? 2 : 3;
+  if (!Array.isArray(q.opts) || q.opts.length < minO) fail.push(`fewer than ${minO} options`);
+  const nopts = (q.opts || []).map(norm);
+  if (new Set(nopts).size !== nopts.length) fail.push("duplicate options");
+  if (!["A", "C3"].includes(q.type)) { const b = (q.opts || []).map(bare); if (b.some((x, i) => b.some((y, j) => i !== j && x && y && (x === y || x.includes(y))))) warn.push("two options are nearly the same"); }
+  if (nopts.filter(o => o === norm(q.ans)).length !== 1) fail.push("answer not exactly once among the options");
+  if (!q.nodes || !q.nodes.length || q.nodes.some(n => !NODE[n])) fail.push("tagged to an unknown knowledge-map node");
+  if (![1, 2, 3].includes(q.diff)) fail.push("difficulty must be 1, 2 or 3");
+  if (!q.exp) warn.push("no explanation");
+  if (q.type !== "C3") { const a = norm(q.ans).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); if (a.length > 3 && new RegExp("(^|[^a-z0-9])" + a + "($|[^a-z0-9])").test(norm(q.stem.replace(/<[^>]+>/g, "")))) warn.push("answer text appears in the question (give-away)"); }
+  /* knowledge-consistency checks: no distractor may also be correct according to the knowledge map */
+  const r = NODE[q.nodes && q.nodes[0]];
+  if (r && q.type === "G1") {
+    const u = r.uses[+q.id.split(":")[2]];
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; const x = KM.nodes.find(n => norm(`${n.formula} (${n.name})`) === norm(o));
+      if (!x) fail.push("option is not a known reagent"); else if (canDo(x, u)) fail.push(`distractor ${x.formula} can also do this conversion`); else if (unsafe(x, r, u)) fail.push(`distractor ${x.formula} is the same chemical as a correct reagent, or is marked as arguable`); });
+  }
+  if (r && q.type === "G2") {
+    const u = r.uses[+q.id.split(":")[2]];
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; if (r.uses.some(v => sameStart(v[0], u[0]) && overlap(v[1], o))) fail.push(`distractor “${o}” is also a product of this reagent`); else if (overlap(o, q.ans)) warn.push(`distractor “${o}” is close in meaning to the answer`); });
+  }
+  if (r && (q.type === "G4" || q.type === "G3")) {
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; const x = KM.nodes.find(n => norm(n.formula) === norm(o));
+      if (!x) fail.push("option is not a known reagent");
+      else if (q.type === "G4" && x.named.some(m => q.stem.includes(esc(m)))) fail.push(`distractor ${x.formula} also belongs to this named reaction`); });
+  }
+  if (r && q.type === "C3") { const a = r.sorts[q.sort[1]], item = norm(q.item);
+    const bs = new Set(a.items.filter(([t]) => norm(t) === item).map(([, b]) => b)); if (bs.size > 1) fail.push("this item appears in more than one group"); }
+  if (r && q.type === "C1") { const plain = norm(q.stem.replace(/<[^>]+>/g, "")); q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && norm(o).length > 4 && plain.includes(norm(o))) warn.push(`a wrong option (“${o}”) is named in the description`); }); }
+  if (q.type === "C2" || q.type === "C4") q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && jacc(o, q.ans) >= .3) warn.push("a wrong option says nearly the same as the answer"); });
+  if (r && q.type === "G5") q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && r.named.includes(o)) fail.push("distractor is also a named reaction of this reagent"); });
+  return {status: fail.length ? "fail" : warn.length ? "warn" : "pass", fail, warn};
+}
+function buildBank(T){
+  const authored = T.authored.map(a => ({...a, type: "A"})), gen = KM.kind === "curriculum" ? generateCurriculum() : generate(), all = authored.concat(gen), seen = new Set();
+  all.forEach(q => { q.v = validate(q); const k = norm(q.stem) + "|" + norm(q.ans); if (seen.has(k)) { q.v.fail.push("duplicate of another question"); q.v.status = "fail"; } seen.add(k); });
+  return {all, live: all.filter(q => q.v.status !== "fail"), counts: {authored: authored.length, generated: gen.length, pass: all.filter(q => q.v.status === "pass").length, warn: all.filter(q => q.v.status === "warn").length, fail: all.filter(q => q.v.status === "fail").length}};
+}
+function setTopic(T){
+  KM = T.km; KM.kind = KM.kind || "reagents"; UI = T.ui; NODE = Object.fromEntries(KM.nodes.map(n => [n.id, n]));
+  LETTERS = KM.groups ? KM.groups.filter(g => KM.nodes.some(n => n.L === g)) : [...new Set(KM.nodes.map(n => n.L))];
+  AV = new Set((KM.avoid || []).flatMap(([a, b]) => [a + "|" + b, b + "|" + a]));
+  BANK = buildBank(T); QBY = Object.fromEntries(BANK.all.map(q => [q.id, q]));
+}
+const nodeLink = id => NODE[id] && NODE[id].href ? NODE[id].href : UI.labHref.replace("{id}", id);
+
+/* ---------- Student Knowledge Model: Bayesian Knowledge Tracing per node ---------- */
+const BKT = {init: .25, learn: .1, slip: .1, mastered: .85};
+function bktUpdate(p, ok, nOpts){
+  const g = 1 / (nOpts || 4), s = BKT.slip;
+  const post = ok ? p * (1 - s) / (p * (1 - s) + (1 - p) * g) : p * s / (p * s + (1 - p) * (1 - g));
+  return post + (1 - post) * BKT.learn;
+}
+const LEVEL = p => p == null ? "unseen" : p >= BKT.mastered ? "mastered" : p >= .5 ? "developing" : "weak";
+const LEVELC = {unseen: "#cbd5e1", weak: "#ef4444", developing: "#f59e0b", mastered: "#16a34a"};
+const LEVELT = {unseen: "Not tried", weak: "Weak", developing: "Developing", mastered: "Mastered"};
+
+/* ---------- Revision Engine: spaced repetition boxes per node ---------- */
+const DAY = 864e5, BOX = [0, 1, 2, 4, 8, 16];       /* days until the next review for each box */
+function srsUpdate(s, ok, now){ s = s || {box: 0, due: now}; s.box = ok ? Math.min(5, s.box + 1) : 0; s.due = now + (ok ? BOX[s.box] * DAY : 10 * 60e3); return s; }
+
+/* ---------- replay a response log into a model (used by both pages) ---------- */
+function replay(log){
+  const M = {}, S = {};
+  log.forEach(e => (e.nodes || []).forEach(n => { if (!NODE[n]) return; M[n] = M[n] || {p: BKT.init, n: 0, c: 0, last: 0}; const m = M[n];
+    m.p = bktUpdate(m.p, e.ok, e.no || 4); m.n++; if (e.ok) m.c++; m.last = e.t; S[n] = srsUpdate(S[n], e.ok, e.t); }));
+  return {M, S};
+}
+function analytics(log){
+  const by = (f) => { const o = {}; log.forEach(e => { const k = f(e); if (k == null) return; (Array.isArray(k) ? k : [k]).forEach(k1 => { o[k1] = o[k1] || [0, 0]; o[k1][1]++; if (e.ok) o[k1][0]++; }); }); return o; };
+  const conf = {}; log.filter(e => !e.ok).forEach(e => { const k = e.correct + " ⟵ chose " + e.chosen; conf[k] = (conf[k] || 0) + 1; });
+  const sessions = {}; log.forEach(e => { sessions[e.s] = sessions[e.s] || [0, 0, e.t]; sessions[e.s][1]++; if (e.ok) sessions[e.s][0]++; });
+  return {n: log.length, ok: log.filter(e => e.ok).length, ms: log.length ? log.reduce((a, e) => a + (e.ms || 0), 0) / log.length : 0,
+    byRole: by(e => (e.nodes || []).flatMap(n => NODE[n] ? NODE[n].roles : [])), byDiff: by(e => e.diff), byType: by(e => e.type), byLetter: by(e => (e.nodes || []).map(n => NODE[n] && NODE[n].L)),
+    conf: Object.entries(conf).sort((a, b) => b[1] - a[1]), sessions: Object.values(sessions).sort((a, b) => a[2] - b[2])};
+}
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+function bars(obj, labelf, color){
+  const rows = Object.entries(obj).map(([k, v]) => [labelf ? labelf(k) : k, v]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  if (!rows.length) return `<p class="mut">No answers yet.</p>`;
+  return `<div class="bars">${rows.map(([k, v]) => `<div class="bar"><span class="bl">${esc(k)}</span><span class="bt"><span style="width:${pct(v[0], v[1])}%;background:${color || "#ea580c"}"></span></span><span class="bv">${pct(v[0], v[1])}% <small>(${v[0]}/${v[1]})</small></span></div>`).join("")}</div>`;
+}
+function lineSvg(vals, w, h){
+  if (vals.length < 2) return `<p class="mut">Complete two or more sessions to see your trend.</p>`;
+  const X = i => 30 + i * (w - 45) / (vals.length - 1), Y = v => h - 22 - v / 100 * (h - 34);
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px" role="img" aria-label="Accuracy per session">${[0, 50, 100].map(v => `<path d="M30 ${Y(v)}H${w - 10}" stroke="#e5e7eb"/><text x="24" y="${Y(v) + 4}" font-size="10" text-anchor="end" fill="#64748b">${v}%</text>`).join("")}
+    <path d="M${vals.map((v, i) => X(i) + " " + Y(v)).join("L")}" fill="none" stroke="#ea580c" stroke-width="2.5"/>${vals.map((v, i) => `<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="#ea580c"/><text x="${X(i)}" y="${h - 6}" font-size="10" text-anchor="middle" fill="#64748b">${i + 1}</text>`).join("")}</svg>`;
+}
+
+/* ---------- Results as a PDF report (readable by people) with the answer data built in (readable by teacher.html) ---------- */
+const WIN = {"–": 150, "—": 151, "‘": 145, "’": 146, "“": 147, "”": 148, "•": 149, "€": 128, "…": 133};
+const PDF_SUB = {"₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9", "⁺": "+", "⁻": "-", "→": "->", "←": "<-", "⟵": "<-", "≥": ">=", "≤": "<=", "≈": "~", "α": "alpha", "β": "beta", "λ": "lambda", "φ": "phi", "Δ": "delta", "⭐": "*", "◆": "*", "○": "o", "●": "*", "✓": "v", "✗": "x"};
+function pdfStr(s){
+  let o = ""; for (const ch of String(s == null ? "" : s)) { const c = PDF_SUB[ch] != null ? PDF_SUB[ch] : ch;
+    for (const d of c) { const k = d.charCodeAt(0);
+      if (d === "(" || d === ")" || d === "\\") o += "\\" + d; else if (k >= 32 && k < 127) o += d;
+      else if (WIN[d]) o += "\\" + WIN[d].toString(8); else if (k >= 160 && k <= 255) o += "\\" + k.toString(8); else o += "?"; } }
+  return o;
+}
+const pdfW = (s, size) => String(s).length * size * .5;
+const fit = (s, size, w) => { s = String(s); if (pdfW(s, size) <= w) return s; const n = Math.max(3, Math.floor(w / (size * .5)) - 1); return s.slice(0, n) + "…"; };
+function makePDF(pages, payload){
+  const objs = [], add = s => { objs.push(s); return objs.length; };
+  const cat = add(""), pagesId = add(""), f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"), f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids = pages.map(ops => { const c = ops.join("\n"); const cid = add(`<< /Length ${c.length} >>\nstream\n${c}\nendstream`); return add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${cid} 0 R >>`); });
+  objs[cat - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`; objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  let out = "%PDF-1.4\n" + (b64.match(/.{1,200}/g) || []).map(l => "%MMPDATA " + l).join("\n") + "\n"; const off = [];
+  objs.forEach((o, i) => { off.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const x = out.length; out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + off.map(n => String(n).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R >>\nstartxref\n${x}\n%%EOF`;
+  return out;
+}
+/* read a results file: the PDF report (data inside) or an older JSON file */
+function readResults(text){
+  if (text.startsWith("%PDF")) { const b = (text.match(/^%MMPDATA (.*)$/gm) || []).map(l => l.slice(9).trim()).join(""); if (!b) throw new Error("no data"); return JSON.parse(decodeURIComponent(escape(atob(b)))); }
+  return JSON.parse(text);
+}
+
+/* results files carry no question text: rebuild it from this page's own question bank */
+const _readResults = readResults;
+readResults = function(t){ const d = _readResults(t); if (d && Array.isArray(d.log) && typeof QBY === "object" && QBY) d.log.forEach(e => { const q = QBY[e.q]; if (q && e.chosen == null) { e.correct = q.ans; e.chosen = e.ci >= 0 ? q.opts[e.ci] : "?"; } }); return d; };
+
+setTopic(DATA);
+/* ===================== teacher view ===================== */
+const $ = s => document.querySelector(s);
+const STUS = {}; let STU = [], tab = "class", demo = false, sortK = "name";
+function useTopic(id){ STUS[DATA.topic] = STU; DATA = ALL.topics.find(t => t.topic === id) || DATA; setTopic(DATA); STU = STUS[DATA.topic] || []; demo = STU.some(s => s.edition === "demo"); render(); }
+function addStudent(d, name){
+  const log = (d.log || []).filter(e => e && e.q && Array.isArray(e.nodes)), R = replay(log), A = analytics(log);
+  const lv = KM.nodes.map(n => LEVEL(R.M[n.id] ? R.M[n.id].p : null));
+  const key = (d.student || name) + "|" + (log[0] ? log[0].t : 0);
+  STU = STU.filter(s => s.key !== key);
+  STU.push({key, name: d.student || name, log, R, A, mastered: lv.filter(l => l === "mastered").length, weak: lv.filter(l => l === "weak").length, last: log.length ? log[log.length - 1].t : 0, edition: d.edition || ""});
+}
+function loadFiles(fl){
+  const msgs = []; Promise.all([...fl].map(f => f.text().then(t => { const d = readResults(t); const T = ALL.topics.find(x => x.topic === d.topic); if (!T || !Array.isArray(d.log)) throw 0;
+      if (T.topic !== DATA.topic) { STUS[DATA.topic] = STU; DATA = T; setTopic(DATA); STU = STUS[DATA.topic] || []; }
+      STU = STU.filter(s => s.edition !== "demo"); addStudent(d, f.name); msgs.push("✓ " + f.name + " · " + T.ui.title); }).catch(() => msgs.push("✗ " + f.name + " is not an MMP report."))))
+    .then(() => { render(); $("#view").insertAdjacentHTML("afterbegin", `<div class="panel mut">${msgs.map(esc).join("<br>")}</div>`); });
+}
+function demoClass(){
+  const names = ["Aarav", "Diya", "Kabir", "Meera", "Rohan", "Sara", "Ishaan", "Anaya"], t0 = Date.now() - 12 * DAY;
+  STU = []; demo = true;
+  names.forEach((nm, si) => { const r = seeded(nm), ab = .35 + si * .07, log = []; let t = t0 + si * 3600e3;
+    for (let s = 1; s <= 4 + (si % 3); s++) { for (let i = 0; i < 12; i++) { const q = BANK.live[Math.floor(r() * BANK.live.length)], n = NODE[q.nodes[0]];
+        const pr = Math.min(.95, ab + (n.pri === "core" ? .12 : -.05) - (q.diff - 1) * .1 + s * .04), ok = r() < pr, wrong = q.opts.filter(o => o !== q.ans);
+        log.push({t: t += 40e3 + r() * 60e3, s, q: q.id, nodes: q.nodes, type: q.type, diff: q.diff, ok, chosen: ok ? q.ans : wrong[Math.floor(r() * wrong.length)], correct: q.ans, ms: 8e3 + r() * 30e3, no: q.opts.length}); }
+      t += DAY * (1 + Math.floor(r() * 2)); }
+    addStudent({student: nm + " (demo)", log, edition: "demo"}, nm); });
+  render();
+}
+const cellC = p => p == null ? "#cbd5e1" : LEVELC[LEVEL(p)];
+function startBox(){
+  return `<div class="panel"><div class="drop"><h2>Load your participants’ results</h2><p>Each participant downloads a results PDF from <b>Dashboard → Download my results (PDF)</b> and sends it to you (e-mail, WhatsApp, Google Classroom …). Select all the files at once.</p>
+    <button class="go" data-load="1">Choose participants’ results PDFs</button> <button data-demo="1">Try with a demo class</button><p class="mut">${STU.length ? `${STU.length} student${STU.length > 1 ? "s" : ""} loaded${demo ? " (demo data: made up)" : ""}.` : "No files loaded yet."}</p></div></div>`;
+}
+function viewClass(){
+  if (!STU.length) return startBox();
+  const all = STU.flatMap(s => s.log), A = analytics(all), S = STU.slice().sort((a, b) => sortK === "name" ? a.name.localeCompare(b.name) : (b[sortK] || 0) - (a[sortK] || 0));
+  const rows = S.map(s => `<tr><td>${esc(s.name)}</td><td>${s.A.n}</td><td>${pct(s.A.ok, s.A.n)}%</td><td>${s.mastered}</td><td>${s.weak}</td><td>${s.A.sessions.length}</td><td>${s.last ? new Date(s.last).toLocaleDateString() : "–"}</td><td>${(s.A.ms / 1000).toFixed(1)} s</td></tr>`).join("");
+  return startBox() + `<div class="panel"><h2>Class at a glance</h2><div class="kpis"><div class="kpi"><b>${STU.length}</b><span>participants</span></div><div class="kpi"><b>${A.n}</b><span>answers</span></div><div class="kpi"><b>${pct(A.ok, A.n)}%</b><span>class accuracy</span></div><div class="kpi"><b>${Math.round(STU.reduce((a, s) => a + s.mastered, 0) / STU.length)}</b><span>average ${UI.nouns} mastered (of ${KM.nodes.length})</span></div></div></div>
+    <div class="panel"><h2>Students</h2><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="mut">Sort by:</span>${[["name", "Name"], ["mastered", "Mastered"], ["weak", "Weak"], ["last", "Last active"]].map(([k, l]) => `<button class="${sortK === k ? "on" : ""}" data-sort="${k}">${l}</button>`).join("")}<button data-csv="1">Export class summary (CSV)</button></div>
+      <div class="tw"><table><tr><th>Participant</th><th>Answers</th><th>Accuracy</th><th>Mastered</th><th>Weak</th><th>Sessions</th><th>Last active</th><th>Avg time</th></tr>${rows}</table></div></div>
+    <div class="grid2"><div class="panel"><h2>Class accuracy by job</h2>${bars(A.byRole, k => KM.roles[k], "#0d9488")}</div><div class="panel"><h2>Class accuracy by difficulty</h2>${bars(A.byDiff, k => ["", "Easy", "Medium", "Hard"][k], "#2563eb")}<h2 style="margin-top:14px">By question type</h2>${bars(A.byType, k => TYPE[k], "#7c3aed")}</div></div>
+    <div class="panel"><h2>Most common confusions in the class</h2>${A.conf.length ? `<div class="tw"><table><tr><th>Correct answer ⟵ chosen instead</th><th>Times</th></tr>${A.conf.slice(0, 12).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join("")}</table></div>` : `<p class="mut">No mistakes recorded.</p>`}</div>`;
+}
+function viewTopics(){
+  if (!STU.length) return startBox();
+  const avg = KM.nodes.map(n => { const ps = STU.map(s => s.R.M[n.id]).filter(Boolean); return [n, ps.length ? ps.reduce((a, m) => a + m.p, 0) / ps.length : null, ps.length]; });
+  const tried = avg.filter(x => x[1] != null).sort((a, b) => a[1] - b[1]);
+  return `<div class="panel"><h2>Weakest ${UI.nouns} across the class</h2><p class="mut">Average mastery of the participants who have attempted each ${UI.noun}. Teach or revise the top of this list first.</p>
+    <div class="bars">${tried.slice(0, 15).map(([n, p, k]) => `<div class="bar"><span class="bl">${esc(n.name)} <small class="mut">${esc(n.formula)}</small></span><span class="bt"><span style="width:${Math.round(p * 100)}%;background:${cellC(p)}"></span></span><span class="bv">${Math.round(p * 100)}% <small>(${k} st.)</small></span></div>`).join("") || `<p class="mut">No attempts yet.</p>`}</div>
+    <p class="mut">Not attempted by anyone: ${avg.filter(x => x[1] == null).length} ${UI.nouns}.</p></div>
+    <div class="panel"><h2>Mastery map: participants × ${KM.kind === 'reagents' ? 'letters' : 'parts'}</h2><p class="mut">Each cell is the participant’s average mastery over the ${UI.nouns} they tried in that group. Grey = not tried.</p><div class="tw"><table><tr><th>Participant</th>${LETTERS.map(L => `<th style="color:${LC(L)};text-align:center">${esc(L)}</th>`).join("")}</tr>
+      ${STU.map(s => `<tr><td>${esc(s.name)}</td>${LETTERS.map(L => { const ps = KM.nodes.filter(n => n.L === L).map(n => s.R.M[n.id]).filter(Boolean); const p = ps.length ? ps.reduce((a, m) => a + m.p, 0) / ps.length : null; return `<td class="cell" style="background:${cellC(p)}">${p == null ? "" : Math.round(p * 100)}</td>`; }).join("")}</tr>`).join("")}</table></div>
+      <p class="mut"><span class="flag" style="background:${LEVELC.weak}">below 50%</span><span class="flag" style="background:${LEVELC.developing}">50–84%</span><span class="flag" style="background:${LEVELC.mastered}">85%+</span></p></div>`;
+}
+function viewItems(){
+  if (!STU.length) return startBox();
+  const it = {}; STU.forEach(s => s.log.forEach(e => { const o = it[e.q] = it[e.q] || {n: 0, ok: 0, wrong: {}, ms: 0}; o.n++; o.ms += e.ms || 0; if (e.ok) o.ok++; else o.wrong[e.chosen] = (o.wrong[e.chosen] || 0) + 1; }));
+  const rows = Object.entries(it).map(([id, o]) => { const top = Object.entries(o.wrong).sort((a, b) => b[1] - a[1])[0], f = o.ok / o.n, flags = [];
+    if (o.n >= 4 && f < .3) flags.push(["Very hard", "#b91c1c"]); if (o.n >= 5 && f > .95) flags.push(["Too easy", "#64748b"]); if (top && top[1] > o.ok && o.n >= 4) flags.push(["Check the key", "#7c3aed"]);
+    return {id, q: QBY[id], o, f, top, flags}; }).filter(r => r.q).sort((a, b) => (a.o.n >= 3 ? 0 : 1) - (b.o.n >= 3 ? 0 : 1) || b.flags.length - a.flags.length || a.f - b.f);
+  return `<div class="panel"><h2>Item analysis</h2><p class="mut">Facility = share of answers that were correct. <b>Check the key</b> means one wrong option was chosen more often than the correct answer: review the question or the teaching. Questions with at least 3 answers are listed first. ${rows.length} questions have been answered.</p>
+    <div class="tw"><table><tr><th>Question</th><th>Type</th><th>Answers</th><th>Facility</th><th>Most chosen wrong option</th><th>Avg time</th><th>Flags</th></tr>
+    ${rows.map(r => `<tr><td>${r.q.stem.replace(/<[^>]+>/g, "")}<div class="mut">Key: ${esc(r.q.ans)}</div></td><td>${TYPE[r.q.type]}</td><td>${r.o.n}</td><td><b style="color:${cellC(r.f)}">${Math.round(r.f * 100)}%</b></td><td>${r.top ? esc(r.top[0]) + ` <span class="mut">(${r.top[1]})</span>` : "–"}</td><td>${(r.o.ms / r.o.n / 1000).toFixed(1)} s</td><td>${r.flags.map(([t, c]) => `<span class="flag" style="background:${c}">${t}</span>`).join("")}</td></tr>`).join("")}</table></div></div>`;
+}
+function viewValid(){
+  const C = BANK.counts, byT = {}; BANK.all.forEach(q => { const o = byT[q.type] = byT[q.type] || {pass: 0, warn: 0, fail: 0}; o[q.v.status]++; });
+  const issues = BANK.all.filter(q => q.v.status !== "pass");
+  return `<div class="panel"><h2>Question bank validation</h2><p class="mut">The same checks run inside every participant’s page before a question can be shown. Rejected questions are never shown to students.</p>
+    <div class="kpis"><div class="kpi"><b>${BANK.all.length}</b><span>questions checked</span></div><div class="kpi"><b>${C.pass}</b><span>passed</span></div><div class="kpi"><b>${C.warn}</b><span>passed with a note</span></div><div class="kpi"><b>${C.fail}</b><span>rejected</span></div></div>
+    <div class="tw" style="margin-top:10px"><table><tr><th>Type</th><th>Passed</th><th>With a note</th><th>Rejected</th></tr>${Object.entries(byT).map(([k, o]) => `<tr><td>${TYPE[k]}</td><td>${o.pass}</td><td>${o.warn}</td><td>${o.fail}</td></tr>`).join("")}</table></div>
+    <h2 style="margin-top:14px">Checks applied</h2><ul class="mut"><li>Question text, answer and at least 3 options present; no duplicate options; the answer appears exactly once.</li><li>Tagged to a real ${UI.noun} in the knowledge map; difficulty 1–3; duplicate questions removed.</li><li>Knowledge check: no wrong option is also a correct answer according to the knowledge map (same starting material and same kind of product, or the same named reaction).</li><li>Note (not a rejection): the answer text appears in the question, a wrong option is close in meaning to the answer, or there is no explanation.</li></ul>
+    <h2>Questions with notes or rejections (${issues.length})</h2><div class="tw"><table><tr><th>Status</th><th>Question</th><th>Key</th><th>Reason</th></tr>${issues.map(q => `<tr><td><span class="flag" style="background:${q.v.status === "fail" ? "#b91c1c" : "#ca8a04"}">${q.v.status === "fail" ? "Rejected" : "Note"}</span></td><td>${q.stem.replace(/<[^>]+>/g, "")}</td><td>${esc(q.ans)}</td><td class="mut">${esc(q.v.fail.concat(q.v.warn).join("; "))}</td></tr>`).join("")}</table></div></div>`;
+}
+function csv(){
+  const head = ["Student", "Answers", "Correct", "Accuracy %", "Mastered", "Weak", "Sessions", "Last active"].concat(KM.nodes.map(n => n.name));
+  const lines = [head].concat(STU.map(s => [s.name, s.A.n, s.A.ok, pct(s.A.ok, s.A.n), s.mastered, s.weak, s.A.sessions.length, s.last ? new Date(s.last).toISOString().slice(0, 10) : ""].concat(KM.nodes.map(n => s.R.M[n.id] ? Math.round(s.R.M[n.id].p * 100) : ""))));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(",")).join("\n")], {type: "text/csv"})); a.download = `Working-with-Claude-class-${DATA.topic}-${new Date().toISOString().slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
+function render(){ $("#topics").innerHTML = `<span class="mut">Topic:</span>` + ALL.topics.map(t => `<button class="${t.topic === DATA.topic ? "on" : ""}" data-topic="${t.topic}">${esc(t.ui.title)}${(t.topic === DATA.topic ? STU : STUS[t.topic] || []).length ? ` (${(t.topic === DATA.topic ? STU : STUS[t.topic]).length})` : ""}</button>`).join("") + ` <a class="btn" href="${DATA.ui.practiceFile}">Open the assessment</a>`; document.querySelectorAll("[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === tab)); $("#view").innerHTML = {class: viewClass, topics: viewTopics, items: viewItems, valid: viewValid}[tab](); }
+$("#files").onchange = e => { if (demo) { STU = []; demo = false; } loadFiles(e.target.files); e.target.value = ""; };
+document.addEventListener("click", e => { const t = e.target.closest("[data-tab]"), so = e.target.closest("[data-sort]");
+  const tp = e.target.closest("[data-topic]"); if (tp) { useTopic(tp.dataset.topic); return; }
+  if (t) { tab = t.dataset.tab; render(); } else if (e.target.closest("[data-load]")) $("#files").click(); else if (e.target.closest("[data-demo]")) demoClass();
+  else if (so) { sortK = so.dataset.sort; render(); } else if (e.target.closest("[data-csv]")) csv(); });
+render();
+</script>
+<script src="guard.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>

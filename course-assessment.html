@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adaptive Assessment · Working with Claude (Sample)</title>
+<style>
+:root{--bg:#fff7ed;--card:#fff;--ink:#3a1f0b;--mut:#8a6a52;--acc:#ea580c;--line:#fde0c5;--ok:#15803d;--no:#b91c1c;--soft:#fff1e2}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1410;--card:#241c16;--ink:#f5e9df;--mut:#b9a392;--acc:#fb923c;--line:#3a2d23;--ok:#4ade80;--no:#f87171;--soft:#2c221b}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+.sample{background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:7px 14px;font-size:13px;text-align:center}
+header{padding:12px 16px;background:linear-gradient(90deg,#ea580c,#f59e0b);color:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1;min-width:200px}
+header h1 small{display:block;font-size:12px;font-weight:400;opacity:.9}
+a.btn,button{font:inherit;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:8px;text-decoration:none}
+button:hover,a.btn:hover{border-color:var(--acc)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+button.on,button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.go{font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;max-width:1100px;width:100%;margin:14px auto 0;padding:0 16px}
+main{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:14px 16px 24px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;min-width:0}
+.panel h2{font-size:17px;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:24px;color:var(--acc)}
+.kpi span{font-size:12px;color:var(--mut)}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.act{text-align:left;padding:12px 14px;border-radius:10px;border-left:5px solid var(--c,#ea580c)}
+.act b{display:block;font-size:15px}
+.act span{font-size:12px;color:var(--mut)}
+.mut{color:var(--mut);font-size:13px}
+.stack{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:8px 0;background:var(--line)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.rec{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:0}
+.rec .nm{flex:1;min-width:0}
+.rec .nm b{display:block}
+.dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px}
+.qhead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--mut)}
+.prog{height:6px;background:var(--line);border-radius:3px;margin:8px 0 12px;overflow:hidden}
+.prog span{display:block;height:100%;background:var(--acc)}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;border:1px solid var(--line);margin:0 4px 4px 0;background:var(--soft)}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;color:#fff;margin:0 4px 4px 0}
+.stem{font-size:18px;font-weight:600;margin:8px 0 14px;line-height:1.4}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;padding:11px 13px;font-size:15px}
+.opts button.right{background:var(--ok);color:#fff;border-color:var(--ok)}
+.opts button.wrong{background:var(--no);color:#fff;border-color:var(--no)}
+.fb{margin-top:12px;padding:12px;border-radius:10px;background:var(--soft);border:1px solid var(--line)}
+.delta{font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.tile{text-align:left;padding:7px 9px;border-radius:8px;border:0;color:#fff;min-height:54px}
+.tile small{display:block;font-size:11px;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile.unseen{color:#334155}
+.lh{font-weight:800;margin:12px 0 6px;font-size:15px}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 90px;gap:8px;align-items:center;font-size:13px}
+.bar .bt{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar .bt span{display:block;height:100%}
+.bar .bv{text-align:right}
+.bar .bv small{color:var(--mut)}
+@media(max-width:520px){.bar{grid-template-columns:minmax(0,110px) minmax(0,1fr) 70px}}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+.tw{overflow-x:auto}
+.layer{border-left:4px solid var(--c);padding:8px 12px;margin:8px 0;background:var(--soft);border-radius:8px}
+.layer b{color:var(--c)}
+input[type=text]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+.link{background:none;border:0;padding:0;color:var(--acc);text-decoration:underline;font-size:inherit}
+footer{padding:14px;text-align:center;font-size:13px;color:var(--mut);border-top:1px solid var(--line);background:var(--card)}
+</style>
+</head>
+<body>
+<div class="sample"><b>Sample edition</b>: the adaptive assessment covers only the sample lessons and tools.</div>
+<header>
+  <h1>Adaptive Assessment · Working with Claude<small>Adaptive questions · your knowledge map · revision plan · analytics</small></h1>
+  <a class="btn" href="index.html">Course lessons</a>
+  <a class="btn" href="trainer-view.html">Trainer view</a>
+  
+</header>
+<nav class="tabs" role="tablist">
+  <button data-tab="home" role="tab">Dashboard</button>
+  <button data-tab="practice" role="tab">Practice</button>
+  <button data-tab="map" role="tab">Knowledge map</button>
+  <button data-tab="stats" role="tab">Analytics</button>
+  <button data-tab="how" role="tab">How it works</button>
+</nav>
+<main id="view" aria-live="polite"></main>
+<footer>Your progress is saved only in this browser on this device. Use <b>Download my results (PDF)</b> to send your scores to your trainer.</footer>
+
+<script>
+const DATA = {"topic": "claude-course", "sample": true, "km": {"kind": "curriculum", "nodes": [{"id": "w1s1", "name": "Simplify complex concepts with clear prompts", "formula": "W1 · Step 1", "short": "W1 · Step 1 Simplify complex concepts with clear prompts", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["Prompt anatomy", "A strong prompt states the role, the task, the audience, the context, the output format and any constraints such as length or tone."], ["Iteration", "Treat the first answer as a draft. Ask for one specific change per follow-up rather than rewriting the whole request."], ["Audience calibration", "Naming the audience and their prior knowledge changes vocabulary, examples and depth more than any other single instruction."], ["Analogy check", "An analogy helps only if it maps the key relationship correctly; ask where the analogy breaks down."], ["Verification", "Fluent text can still be wrong. Check definitions, numbers and claims against a trusted source before teaching or publishing."]], "sorts": [], "viva": [], "href": "index.html#/C/W1/w1s1"}, {"id": "w1s2", "name": "Generate problem sets and files with answer keys", "formula": "W1 · Step 2", "short": "W1 · Step 2 Generate problem sets and files with answer keys", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["File creation", "With code execution turned on, Claude can create and edit Excel, Word, PowerPoint and PDF files and offer them for download."], ["Capabilities setting", "Code execution and file creation is switched on or off under Settings → Capabilities; organisations can control it for Team and Enterprise plans."], ["Formula-based keys", "Answers calculated by spreadsheet formulas update automatically when a value changes, which reduces copying errors."], ["Uploading data", "You can upload CSV, spreadsheet and other data files for Claude to analyse, clean, chart or turn into new documents."], ["Human check", "Always recompute a sample of answers yourself; a wrong formula produces confident wrong numbers."]], "sorts": [{"title": "Which output format fits?", "buckets": ["Excel (.xlsx)", "Word (.docx)", "PowerPoint (.pptx)", "PDF"], "items": [["A budget model with formulas", 0], ["A grade calculator learners can reuse", 0], ["An editable handout for colleagues", 1], ["A policy draft with tracked changes", 1], ["A 10-slide briefing", 2], ["Lecture slides with speaker notes", 2], ["A fixed, printable exam paper", 3], ["A certificate that must not change", 3]]}], "viva": [], "href": "index.html#/C/W1/w1s2"}, {"id": "w1s3", "name": "Build interactive tools with artifacts", "formula": "W1 · Step 3", "short": "W1 · Step 3 Build interactive tools with artifacts", "L": "Week 1", "pri": "core", "roles": ["W1"], "topics": [["Artifact", "An artifact is something Claude makes for you that you would put in front of someone: a document, deck, design, dashboard or interactive tool, shown in a side panel."], ["Iterating an artifact", "You change an artifact by asking for edits in the chat; Claude updates it and keeps earlier versions."], ["Versions", "Each update creates a new version, and you can go back to an earlier one if a change made things worse."], ["Interactive tools", "Artifacts can be small working apps such as calculators, simulators, quizzes and trackers that run in the browser."], ["Testing with known answers", "Check a tool with inputs whose correct output you already know before giving it to others."]], "sorts": [], "viva": [], "href": "index.html#/C/W1/w1s3"}, {"id": "s1", "name": "Prompt Studio", "formula": "Tool 1", "short": "Prompt Studio", "L": "Practice Studio", "pri": "core", "roles": ["S"], "topics": [], "sorts": [], "viva": [["Which part of a prompt changes depth the most?", "Naming the audience and what they already know."], ["Why iterate instead of starting again?", "Targeted follow-ups refine a good draft faster and keep what already works."]], "href": "index.html#/C/S/s1"}, {"id": "s2", "name": "Artifact Planner", "formula": "Tool 2", "short": "Artifact Planner", "L": "Practice Studio", "pri": "core", "roles": ["S"], "topics": [], "sorts": [], "viva": [["When would you pick Excel over a Docs artifact?", "When the content needs formulas or calculations that update."], ["What is the difference between publish and share?", "Publishing makes a public link viewable without an account; sharing gives chosen people or link holders view or edit access, and they need a Claude account."]], "href": "index.html#/C/S/s2"}], "roles": {"W1": "Week 1", "W2": "Week 2", "W3": "Week 3", "W4": "Week 4", "S": "Practice Studio"}, "groups": ["Week 1", "Week 2", "Week 3", "Week 4", "Practice Studio"], "groupNames": {"Week 1": "Week 1: STEM and technical fields", "Week 2": "Week 2: Arts, humanities and communication", "Week 3": "Week 3: Commerce, business and management", "Week 4": "Week 4: Cross-disciplinary work and responsible use", "Practice Studio": "Practice Studio"}}, "authored": [{"id": "Q:w1s1:0", "nodes": ["w1s1"], "diff": 2, "stem": "Which addition usually improves an explanation the most?", "ans": "Naming the audience and what they already know", "opts": ["Asking Claude to be smart", "Naming the audience and what they already know", "Using capital letters", "Adding \"please\" twice"], "exp": "Audience and prior knowledge drive vocabulary and depth."}, {"id": "Q:w1s1:1", "nodes": ["w1s1"], "diff": 2, "stem": "The first reply is too long. The best next step is to", "ans": "reply with a specific change such as \"cut to 80 words\"", "opts": ["start a new chat", "reply with a specific change such as \"cut to 80 words\"", "accept it", "paste the same prompt again"], "exp": "Targeted follow-ups refine a draft efficiently."}, {"id": "Q:w1s1:2", "nodes": ["w1s1"], "diff": 2, "stem": "Why ask where an analogy breaks down?", "ans": "Because analogies can mislead if they map the wrong relationship", "opts": ["To make the answer longer", "Because analogies can mislead if they map the wrong relationship", "It is required by Claude", "To avoid citations"], "exp": "Every analogy has limits; knowing them prevents misconceptions."}, {"id": "Q:w1s1:3", "nodes": ["w1s1"], "diff": 2, "stem": "Before using an AI explanation in class or a report you should", "ans": "check its claims against a trusted source", "opts": ["check its claims against a trusted source", "remove the analogy", "translate it", "nothing"], "exp": "Fluency is not accuracy."}, {"id": "Q:w1s1:4", "nodes": ["w1s1"], "diff": 2, "stem": "Editing your own earlier message in a chat lets you", "ans": "branch and compare a different version of the prompt", "opts": ["delete Claude", "branch and compare a different version of the prompt", "publish the chat", "turn on memory"], "exp": "Editing a prompt creates a new branch of the conversation."}, {"id": "Q:w1s2:0", "nodes": ["w1s2"], "diff": 2, "stem": "Where do you turn on file creation in Claude?", "ans": "Settings → Capabilities", "opts": ["Settings → Capabilities", "Projects → Knowledge", "The artifact Share menu", "Memory"], "exp": "Code execution and file creation lives under Capabilities."}, {"id": "Q:w1s2:1", "nodes": ["w1s2"], "diff": 2, "stem": "Why ask for answers calculated by formula?", "ans": "They stay correct when inputs change", "opts": ["They look better", "They stay correct when inputs change", "Claude requires it", "It makes the file smaller"], "exp": "Formulas recalculate automatically."}, {"id": "Q:w1s2:2", "nodes": ["w1s2"], "diff": 2, "stem": "Which is NOT a format Claude can create with file creation?", "ans": "A physical printed book", "opts": ["Excel", "Word", "PowerPoint", "A physical printed book"], "exp": "Claude creates digital files."}, {"id": "Q:w1s2:3", "nodes": ["w1s2"], "diff": 2, "stem": "After receiving a problem-set file you should", "ans": "check a sample of answers yourself", "opts": ["check a sample of answers yourself", "publish it immediately", "delete the formulas", "convert it to an image"], "exp": "A wrong formula can produce confident wrong answers."}, {"id": "Q:w1s2:4", "nodes": ["w1s2"], "diff": 2, "stem": "You have a CSV of survey results. Claude can", "ans": "analyse it and create a summary sheet or chart", "opts": ["only read the file name", "analyse it and create a summary sheet or chart", "not open CSV files", "only translate it"], "exp": "Uploaded data files can be analysed and transformed."}, {"id": "Q:w1s3:0", "nodes": ["w1s3"], "diff": 2, "stem": "An artifact is best described as", "ans": "something Claude makes that you would put in front of someone, shown in a side panel", "opts": ["a chat message", "something Claude makes that you would put in front of someone, shown in a side panel", "a settings page", "a type of memory"], "exp": "Artifacts are standalone outputs: documents, decks, designs, tools."}, {"id": "Q:w1s3:1", "nodes": ["w1s3"], "diff": 2, "stem": "A change made your artifact worse. You can", "ans": "return to an earlier version", "opts": ["only start again", "return to an earlier version", "delete your account", "turn on research"], "exp": "Artifacts keep versions."}, {"id": "Q:w1s3:2", "nodes": ["w1s3"], "diff": 2, "stem": "The most reliable way to build an interactive tool is", "ans": "build the core, then add one feature at a time", "opts": ["ask for every feature at once", "build the core, then add one feature at a time", "paste code from elsewhere", "avoid testing"], "exp": "Small steps are easier to check."}, {"id": "Q:w1s3:3", "nodes": ["w1s3"], "diff": 2, "stem": "Before sharing a calculator artifact you should", "ans": "test it with inputs whose answer you know", "opts": ["test it with inputs whose answer you know", "remove the labels", "turn off file creation", "shorten its name"], "exp": "Known-answer tests catch formula errors."}, {"id": "Q:w1s3:4", "nodes": ["w1s3"], "diff": 2, "stem": "Which is an example of an interactive artifact?", "ans": "A grade calculator", "opts": ["A grade calculator", "A memory summary", "A connector", "An incognito chat"], "exp": "Artifacts can be working tools."}], "ui": {"title": "Working with Claude", "noun": "lesson", "nouns": "lessons", "Noun": "Lesson", "diag": "Up to 12 questions spread across the whole course", "labHref": "", "openText": "Open the lesson", "practiceFile": "course-assessment.html", "h1": "Adaptive Assessment · Working with Claude", "links": "<a class=\"btn\" href=\"index.html\">Course lessons<\/a>\n  <a class=\"btn\" href=\"trainer-view.html\">Trainer view<\/a>", "back": "index.html", "kmText": "5 nodes: 3 lessons and 2 studio tools, grouped by week. Each lesson carries its key ideas, sorting activities and quiz; each tool its check questions.", "genText": "Templates turn every key idea, sorting activity and check question of the course into questions: name the concept from its description, choose the right meaning of a term, sort an example into its group, and answer viva questions. Wrong options come from the same lesson first, so they are close but clearly different."}};
+/* =====================================================================
+   MMP learning engine (shared by practice.html and teacher.html)
+   Layers: Knowledge Map · Question Bank · AI Question Generator ·
+           Validation Engine · Student Knowledge Model · Adaptive Engine ·
+           Revision Engine · Response Analytics
+   ===================================================================== */
+let KM, NODE, LETTERS, AV, BANK, QBY, UI;           /* set by setTopic(): one topic (knowledge map + bank) at a time */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const norm = s => String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[₀-₉]/g, d => "0123456789"["₀₁₂₃₄₅₆₇₈₉".indexOf(d)]).replace(/[⁺⁻²³]/g, "").replace(/\s+/g, " ").trim();
+const bare = s => norm(String(s).replace(/\([^)]*\)/g, ""));
+const STOP = new Set("and the then with from into salt compound mixture higher pure other one fewer carbon ion group product products solution precipitate white yellow orange dye any via".split(" "));
+const SYN = {carboxylate: "carboxylic", carboxylat: "carboxylic", phenoxide: "phenoxide", haloarene: "halide", alkoxide: "alkoxide", chloride: "halide", bromide: "halide", iodide: "halide", fluoride: "halide"};
+const toks = s => new Set(bare(s).split(/[^a-z0-9°]+/).filter(w => w.length >= 3 && !STOP.has(w)).map(w => w.length > 4 ? w.replace(/(es|s)$/, "") : w).map(w => SYN[w] || w));
+const overlap = (a, b) => { const A = toks(a); for (const w of toks(b)) if (A.has(w)) return true; return false; };
+const sameStart = (a, b) => { const x = bare(a), y = bare(b); return x === y || x.includes(y) || y.includes(x); };
+const PAL = ["#e11d48", "#ea580c", "#ca8a04", "#16a34a", "#0d9488", "#0891b2", "#2563eb", "#4f46e5", "#7c3aed", "#c026d3", "#db2777", "#b45309"];
+const LC = L => PAL[LETTERS.indexOf(L) % PAL.length];
+const PRIW = {core: 1, imp: .8, sup: .5};
+const TYPE = {G1: "Which reagent?", G2: "What forms?", G3: "Observation", G4: "Named reaction → reagent", G5: "Reagent → named reaction", A: "Concept (authored)",
+  C1: "Name the concept", C2: "Meaning of a term", C3: "Sort it", C4: "Viva"};
+
+/* seeded random, so a generated question always has the same options (stable for analytics) */
+function seeded(str){ let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
+const sshuffle = (a, r) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const lead = f => norm(f).replace(/^(conc\.|dil\.|cold|hot|anhydrous)\s*/, "").split(/[ \/,+(]/)[0];
+/* reagents that can do the same job (or are the same chemical with other conditions) are never used as wrong options */
+const canDo = (x, u) => x.uses.some(v => sameStart(v[0], u[0]) && overlap(v[1], u[1]));
+const unsafe = (x, r, u) => x === r || canDo(x, u) || AV.has(x.id + "|" + r.id) || KM.nodes.some(c => (c === r || canDo(c, u)) && lead(c.formula) === lead(x.formula));
+const roleShare = (a, b) => a.roles.filter(k => b.roles.includes(k)).length;
+
+/* ---------- AI Question Generator (rule-based templates over the knowledge map) ---------- */
+function generate(){
+  const Q = [], N = KM.nodes;
+  N.forEach(r => r.uses.forEach((u, k) => {
+    const id1 = `G1:${r.id}:${k}`, R1 = seeded(id1);
+    const d1 = sshuffle(N.filter(x => !unsafe(x, r, u)), R1).sort((a, b) => roleShare(b, r) - roleShare(a, r)).slice(0, 3);
+    Q.push({id: id1, type: "G1", nodes: [r.id], diff: r.pri === "core" ? 1 : 2, stem: `Which reagent converts <b>${esc(u[0])}</b> → <b>${esc(u[1])}</b>?`,
+      ans: `${r.formula} (${r.name})`, opts: [r, ...d1].map(x => `${x.formula} (${x.name})`), exp: `${r.formula}: ${u[0]} → ${u[1]}${u[2] ? " (" + u[2] + ")" : ""}.`});
+    const id2 = `G2:${r.id}:${k}`, R2 = seeded(id2), twin = r.uses.filter(v => sameStart(v[0], u[0])).length > 1;
+    const own = r.uses.filter(v => sameStart(v[0], u[0])).map(v => v[1]);
+    const pool = [], seenB = new Set([bare(u[1]), bare(u[0])]);
+    N.flatMap(x => x.uses.map(v => v[1])).forEach(p => { const b = bare(p); if (seenB.has(b) || [...seenB].some(o => o.includes(b) || b.includes(o)) || own.some(o => overlap(o, p)) || overlap(p, u[1])) return; seenB.add(b); pool.push(p); });
+    Q.push({id: id2, type: "G2", nodes: [r.id], diff: 2, stem: `<b>${esc(u[0])}</b> is treated with <b>${esc(r.formula)}</b>${twin && u[2] ? ` (${esc(u[2])})` : ""}. What forms?`,
+      ans: u[1], opts: [u[1], ...sshuffle(pool, R2).slice(0, 3)], exp: `${u[0]} + ${r.formula} → ${u[1]}${u[2] ? " (" + u[2] + ")" : ""}.`});
+  }));
+  N.filter(r => r.obs).forEach(r => {
+    const id = `G3:${r.id}`, R = seeded(id), d = sshuffle(N.filter(x => x !== r && x.obs && !overlap(x.obs, r.obs)), R).slice(0, 3);
+    Q.push({id, type: "G3", nodes: [r.id], diff: 1, stem: `Which reagent gives this observation? <i>“${esc(r.obs)}”</i>`, ans: r.formula, opts: [r, ...d].map(x => x.formula), exp: `${r.name} (${r.formula}): ${r.obs}`});
+  });
+  const named = {}; N.forEach(r => r.named.forEach(n => (named[n] = named[n] || []).push(r)));
+  Object.entries(named).forEach(([n, rs]) => {
+    const r = rs[0], id = `G4:${n}`, R = seeded(id), d = sshuffle(N.filter(x => !rs.includes(x) && !x.named.includes(n)), R).sort((a, b) => roleShare(b, r) - roleShare(a, r)).slice(0, 3);
+    Q.push({id, type: "G4", nodes: [r.id], diff: 2, stem: `Which reagent is used in the <b>${esc(n)}</b>?`, ans: r.formula, opts: [r, ...d].map(x => x.formula), exp: `${n}: ${r.formula} (${r.name}).`});
+  });
+  N.filter(r => r.named.length).forEach(r => {
+    const n = r.named[0], id = `G5:${r.id}`, R = seeded(id), d = sshuffle(Object.keys(named).filter(m => !r.named.includes(m)), R).slice(0, 3);
+    Q.push({id, type: "G5", nodes: [r.id], diff: 2, stem: `<b>${esc(r.formula)}</b> is the key reagent in which named reaction?`, ans: n, opts: [n, ...d], exp: `${r.formula} (${r.name}): ${r.named.join(", ")}.`});
+  });
+  return Q;
+}
+
+/* ---------- AI Question Generator for curriculum topics (units, concepts, sorting activities, viva) ---------- */
+const jacc = (a, b) => { const A = toks(a), B = toks(b); if (!A.size || !B.size) return 0; let i = 0; B.forEach(w => { if (A.has(w)) i++; }); return i / (A.size + B.size - i); };
+const firstSentence = t => { const m = String(t).match(/^(.{40,}?[.!?])(\s|$)/); const x = m ? m[1] : String(t); return x.length > 170 ? x.slice(0, 167).replace(/\s+\S*$/, "") + " …" : x; };
+function mask(text, title){ let t = String(text); [title, String(title).replace(/\([^)]*\)/g, "").trim()].filter(x => x.length > 2).forEach(x => { t = t.replace(new RegExp(x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "_____"); }); return t; }
+function generateCurriculum(){
+  const Q = [], N = KM.nodes, all = N.flatMap(n => (n.topics || []).map((t, k) => ({n, t, k}))), viva = N.flatMap(n => (n.viva || []).map((v, k) => ({n, v, k})));
+  const distinct = (arr, ans, f, sim) => { const out = [], seen = [bare(ans)], seenT = [ans]; for (const x of arr) { const t = f(x), b = bare(t); if (!b || seen.some(y => y === b || y.includes(b) || b.includes(y)) || (sim && seenT.some(y => jacc(y, t) >= .3))) continue; seen.push(b); seenT.push(t); out.push(x); } return out; };
+  all.forEach(({n, t, k}) => {
+    const id1 = `C1:${n.id}:${k}`, R1 = seeded(id1), same = sshuffle(all.filter(x => x.n === n && x.k !== k), R1), other = sshuffle(all.filter(x => x.n !== n && x.n.L === n.L), R1);
+    const shown = norm(mask(t[1], t[0])), d1 = distinct(same.concat(other).filter(x => !(norm(x.t[0]).length > 3 && shown.includes(norm(x.t[0])))), t[0], x => x.t[0]).slice(0, 3);
+    Q.push({id: id1, type: "C1", nodes: [n.id], diff: 1, stem: `Which concept is this? <i>“${esc(mask(t[1], t[0]))}”</i>`, ans: t[0], opts: [t[0], ...d1.map(x => x.t[0])], exp: `${t[0]}: ${t[1]}`});
+    const id2 = `C2:${n.id}:${k}`, R2 = seeded(id2), d2 = distinct(sshuffle(all.filter(x => x.n === n && x.k !== k), R2).concat(sshuffle(all.filter(x => x.n !== n), R2)), firstSentence(t[1]), x => firstSentence(x.t[1]), true).slice(0, 3);
+    Q.push({id: id2, type: "C2", nodes: [n.id], diff: 2, stem: `Which statement best describes <b>${esc(t[0])}</b>?`, ans: firstSentence(t[1]), opts: [firstSentence(t[1]), ...d2.map(x => firstSentence(x.t[1]))], exp: `${t[0]}: ${t[1]}`});
+  });
+  N.forEach(n => (n.sorts || []).forEach((a, j) => a.items.forEach(([item, b], k) => {
+    Q.push({id: `C3:${n.id}:${j}:${k}`, type: "C3", nodes: [n.id], diff: 1, stem: `<b>${esc(a.title)}</b><br>Where does “${esc(item)}” belong?`, ans: a.buckets[b], opts: a.buckets.slice(), exp: `“${item}” → ${a.buckets[b]}.`, sort: [n.id, j], item});
+  })));
+  viva.forEach(({n, v, k}) => {
+    const id = `C4:${n.id}:${k}`, R = seeded(id), d = distinct(sshuffle(viva.filter(x => x.n === n && x.k !== k), R).concat(sshuffle(viva.filter(x => x.n !== n), R)), firstSentence(v[1]), x => firstSentence(x.v[1]), true).slice(0, 3);
+    Q.push({id, type: "C4", nodes: [n.id], diff: 2, stem: `Viva: <b>${esc(v[0])}</b>`, ans: firstSentence(v[1]), opts: [firstSentence(v[1]), ...d.map(x => firstSentence(x.v[1]))], exp: v[1]});
+  });
+  return Q;
+}
+
+/* ---------- Validation Engine: every question is checked before it can be shown ---------- */
+function validate(q){
+  const fail = [], warn = [];
+  if (!q.stem || !q.ans) fail.push("missing stem or answer");
+  const minO = q.type === "A" || q.type === "C3" ? 2 : 3;
+  if (!Array.isArray(q.opts) || q.opts.length < minO) fail.push(`fewer than ${minO} options`);
+  const nopts = (q.opts || []).map(norm);
+  if (new Set(nopts).size !== nopts.length) fail.push("duplicate options");
+  if (!["A", "C3"].includes(q.type)) { const b = (q.opts || []).map(bare); if (b.some((x, i) => b.some((y, j) => i !== j && x && y && (x === y || x.includes(y))))) warn.push("two options are nearly the same"); }
+  if (nopts.filter(o => o === norm(q.ans)).length !== 1) fail.push("answer not exactly once among the options");
+  if (!q.nodes || !q.nodes.length || q.nodes.some(n => !NODE[n])) fail.push("tagged to an unknown knowledge-map node");
+  if (![1, 2, 3].includes(q.diff)) fail.push("difficulty must be 1, 2 or 3");
+  if (!q.exp) warn.push("no explanation");
+  if (q.type !== "C3") { const a = norm(q.ans).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); if (a.length > 3 && new RegExp("(^|[^a-z0-9])" + a + "($|[^a-z0-9])").test(norm(q.stem.replace(/<[^>]+>/g, "")))) warn.push("answer text appears in the question (give-away)"); }
+  /* knowledge-consistency checks: no distractor may also be correct according to the knowledge map */
+  const r = NODE[q.nodes && q.nodes[0]];
+  if (r && q.type === "G1") {
+    const u = r.uses[+q.id.split(":")[2]];
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; const x = KM.nodes.find(n => norm(`${n.formula} (${n.name})`) === norm(o));
+      if (!x) fail.push("option is not a known reagent"); else if (canDo(x, u)) fail.push(`distractor ${x.formula} can also do this conversion`); else if (unsafe(x, r, u)) fail.push(`distractor ${x.formula} is the same chemical as a correct reagent, or is marked as arguable`); });
+  }
+  if (r && q.type === "G2") {
+    const u = r.uses[+q.id.split(":")[2]];
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; if (r.uses.some(v => sameStart(v[0], u[0]) && overlap(v[1], o))) fail.push(`distractor “${o}” is also a product of this reagent`); else if (overlap(o, q.ans)) warn.push(`distractor “${o}” is close in meaning to the answer`); });
+  }
+  if (r && (q.type === "G4" || q.type === "G3")) {
+    q.opts.forEach(o => { if (norm(o) === norm(q.ans)) return; const x = KM.nodes.find(n => norm(n.formula) === norm(o));
+      if (!x) fail.push("option is not a known reagent");
+      else if (q.type === "G4" && x.named.some(m => q.stem.includes(esc(m)))) fail.push(`distractor ${x.formula} also belongs to this named reaction`); });
+  }
+  if (r && q.type === "C3") { const a = r.sorts[q.sort[1]], item = norm(q.item);
+    const bs = new Set(a.items.filter(([t]) => norm(t) === item).map(([, b]) => b)); if (bs.size > 1) fail.push("this item appears in more than one group"); }
+  if (r && q.type === "C1") { const plain = norm(q.stem.replace(/<[^>]+>/g, "")); q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && norm(o).length > 4 && plain.includes(norm(o))) warn.push(`a wrong option (“${o}”) is named in the description`); }); }
+  if (q.type === "C2" || q.type === "C4") q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && jacc(o, q.ans) >= .3) warn.push("a wrong option says nearly the same as the answer"); });
+  if (r && q.type === "G5") q.opts.forEach(o => { if (norm(o) !== norm(q.ans) && r.named.includes(o)) fail.push("distractor is also a named reaction of this reagent"); });
+  return {status: fail.length ? "fail" : warn.length ? "warn" : "pass", fail, warn};
+}
+function buildBank(T){
+  const authored = T.authored.map(a => ({...a, type: "A"})), gen = KM.kind === "curriculum" ? generateCurriculum() : generate(), all = authored.concat(gen), seen = new Set();
+  all.forEach(q => { q.v = validate(q); const k = norm(q.stem) + "|" + norm(q.ans); if (seen.has(k)) { q.v.fail.push("duplicate of another question"); q.v.status = "fail"; } seen.add(k); });
+  return {all, live: all.filter(q => q.v.status !== "fail"), counts: {authored: authored.length, generated: gen.length, pass: all.filter(q => q.v.status === "pass").length, warn: all.filter(q => q.v.status === "warn").length, fail: all.filter(q => q.v.status === "fail").length}};
+}
+function setTopic(T){
+  KM = T.km; KM.kind = KM.kind || "reagents"; UI = T.ui; NODE = Object.fromEntries(KM.nodes.map(n => [n.id, n]));
+  LETTERS = KM.groups ? KM.groups.filter(g => KM.nodes.some(n => n.L === g)) : [...new Set(KM.nodes.map(n => n.L))];
+  AV = new Set((KM.avoid || []).flatMap(([a, b]) => [a + "|" + b, b + "|" + a]));
+  BANK = buildBank(T); QBY = Object.fromEntries(BANK.all.map(q => [q.id, q]));
+}
+const nodeLink = id => NODE[id] && NODE[id].href ? NODE[id].href : UI.labHref.replace("{id}", id);
+
+/* ---------- Student Knowledge Model: Bayesian Knowledge Tracing per node ---------- */
+const BKT = {init: .25, learn: .1, slip: .1, mastered: .85};
+function bktUpdate(p, ok, nOpts){
+  const g = 1 / (nOpts || 4), s = BKT.slip;
+  const post = ok ? p * (1 - s) / (p * (1 - s) + (1 - p) * g) : p * s / (p * s + (1 - p) * (1 - g));
+  return post + (1 - post) * BKT.learn;
+}
+const LEVEL = p => p == null ? "unseen" : p >= BKT.mastered ? "mastered" : p >= .5 ? "developing" : "weak";
+const LEVELC = {unseen: "#cbd5e1", weak: "#ef4444", developing: "#f59e0b", mastered: "#16a34a"};
+const LEVELT = {unseen: "Not tried", weak: "Weak", developing: "Developing", mastered: "Mastered"};
+
+/* ---------- Revision Engine: spaced repetition boxes per node ---------- */
+const DAY = 864e5, BOX = [0, 1, 2, 4, 8, 16];       /* days until the next review for each box */
+function srsUpdate(s, ok, now){ s = s || {box: 0, due: now}; s.box = ok ? Math.min(5, s.box + 1) : 0; s.due = now + (ok ? BOX[s.box] * DAY : 10 * 60e3); return s; }
+
+/* ---------- replay a response log into a model (used by both pages) ---------- */
+function replay(log){
+  const M = {}, S = {};
+  log.forEach(e => (e.nodes || []).forEach(n => { if (!NODE[n]) return; M[n] = M[n] || {p: BKT.init, n: 0, c: 0, last: 0}; const m = M[n];
+    m.p = bktUpdate(m.p, e.ok, e.no || 4); m.n++; if (e.ok) m.c++; m.last = e.t; S[n] = srsUpdate(S[n], e.ok, e.t); }));
+  return {M, S};
+}
+function analytics(log){
+  const by = (f) => { const o = {}; log.forEach(e => { const k = f(e); if (k == null) return; (Array.isArray(k) ? k : [k]).forEach(k1 => { o[k1] = o[k1] || [0, 0]; o[k1][1]++; if (e.ok) o[k1][0]++; }); }); return o; };
+  const conf = {}; log.filter(e => !e.ok).forEach(e => { const k = e.correct + " ⟵ chose " + e.chosen; conf[k] = (conf[k] || 0) + 1; });
+  const sessions = {}; log.forEach(e => { sessions[e.s] = sessions[e.s] || [0, 0, e.t]; sessions[e.s][1]++; if (e.ok) sessions[e.s][0]++; });
+  return {n: log.length, ok: log.filter(e => e.ok).length, ms: log.length ? log.reduce((a, e) => a + (e.ms || 0), 0) / log.length : 0,
+    byRole: by(e => (e.nodes || []).flatMap(n => NODE[n] ? NODE[n].roles : [])), byDiff: by(e => e.diff), byType: by(e => e.type), byLetter: by(e => (e.nodes || []).map(n => NODE[n] && NODE[n].L)),
+    conf: Object.entries(conf).sort((a, b) => b[1] - a[1]), sessions: Object.values(sessions).sort((a, b) => a[2] - b[2])};
+}
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+function bars(obj, labelf, color){
+  const rows = Object.entries(obj).map(([k, v]) => [labelf ? labelf(k) : k, v]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  if (!rows.length) return `<p class="mut">No answers yet.</p>`;
+  return `<div class="bars">${rows.map(([k, v]) => `<div class="bar"><span class="bl">${esc(k)}</span><span class="bt"><span style="width:${pct(v[0], v[1])}%;background:${color || "#ea580c"}"></span></span><span class="bv">${pct(v[0], v[1])}% <small>(${v[0]}/${v[1]})</small></span></div>`).join("")}</div>`;
+}
+function lineSvg(vals, w, h){
+  if (vals.length < 2) return `<p class="mut">Complete two or more sessions to see your trend.</p>`;
+  const X = i => 30 + i * (w - 45) / (vals.length - 1), Y = v => h - 22 - v / 100 * (h - 34);
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:${w}px" role="img" aria-label="Accuracy per session">${[0, 50, 100].map(v => `<path d="M30 ${Y(v)}H${w - 10}" stroke="#e5e7eb"/><text x="24" y="${Y(v) + 4}" font-size="10" text-anchor="end" fill="#64748b">${v}%</text>`).join("")}
+    <path d="M${vals.map((v, i) => X(i) + " " + Y(v)).join("L")}" fill="none" stroke="#ea580c" stroke-width="2.5"/>${vals.map((v, i) => `<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="#ea580c"/><text x="${X(i)}" y="${h - 6}" font-size="10" text-anchor="middle" fill="#64748b">${i + 1}</text>`).join("")}</svg>`;
+}
+
+/* ---------- Results as a PDF report (readable by people) with the answer data built in (readable by teacher.html) ---------- */
+const WIN = {"–": 150, "—": 151, "‘": 145, "’": 146, "“": 147, "”": 148, "•": 149, "€": 128, "…": 133};
+const PDF_SUB = {"₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9", "⁺": "+", "⁻": "-", "→": "->", "←": "<-", "⟵": "<-", "≥": ">=", "≤": "<=", "≈": "~", "α": "alpha", "β": "beta", "λ": "lambda", "φ": "phi", "Δ": "delta", "⭐": "*", "◆": "*", "○": "o", "●": "*", "✓": "v", "✗": "x"};
+function pdfStr(s){
+  let o = ""; for (const ch of String(s == null ? "" : s)) { const c = PDF_SUB[ch] != null ? PDF_SUB[ch] : ch;
+    for (const d of c) { const k = d.charCodeAt(0);
+      if (d === "(" || d === ")" || d === "\\") o += "\\" + d; else if (k >= 32 && k < 127) o += d;
+      else if (WIN[d]) o += "\\" + WIN[d].toString(8); else if (k >= 160 && k <= 255) o += "\\" + k.toString(8); else o += "?"; } }
+  return o;
+}
+const pdfW = (s, size) => String(s).length * size * .5;
+const fit = (s, size, w) => { s = String(s); if (pdfW(s, size) <= w) return s; const n = Math.max(3, Math.floor(w / (size * .5)) - 1); return s.slice(0, n) + "…"; };
+function makePDF(pages, payload){
+  const objs = [], add = s => { objs.push(s); return objs.length; };
+  const cat = add(""), pagesId = add(""), f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"), f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids = pages.map(ops => { const c = ops.join("\n"); const cid = add(`<< /Length ${c.length} >>\nstream\n${c}\nendstream`); return add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${cid} 0 R >>`); });
+  objs[cat - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`; objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  let out = "%PDF-1.4\n" + (b64.match(/.{1,200}/g) || []).map(l => "%MMPDATA " + l).join("\n") + "\n"; const off = [];
+  objs.forEach((o, i) => { off.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const x = out.length; out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + off.map(n => String(n).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R >>\nstartxref\n${x}\n%%EOF`;
+  return out;
+}
+/* read a results file: the PDF report (data inside) or an older JSON file */
+function readResults(text){
+  if (text.startsWith("%PDF")) { const b = (text.match(/^%MMPDATA (.*)$/gm) || []).map(l => l.slice(9).trim()).join(""); if (!b) throw new Error("no data"); return JSON.parse(decodeURIComponent(escape(atob(b)))); }
+  return JSON.parse(text);
+}
+
+/* results files carry no question text: rebuild it from this page's own question bank */
+const _readResults = readResults;
+readResults = function(t){ const d = _readResults(t); if (d && Array.isArray(d.log) && typeof QBY === "object" && QBY) d.log.forEach(e => { const q = QBY[e.q]; if (q && e.chosen == null) { e.correct = q.ans; e.chosen = e.ci >= 0 ? q.opts[e.ci] : "?"; } }); return d; };
+
+/* ---------- certificate of completion: after all lessons (gate) and a passed assessment ---------- */
+const CERT_N = DATA.sample ? 10 : 20, CERT_ACC = 0.7;
+function certState(){
+  const A = analytics(ST.log), acc = A.n ? A.ok / A.n : 0;
+  if (!ST.student) return {ok: false, msg: "Certificate: enter your name above first."};
+  if (A.n < CERT_N) return {ok: false, msg: `Certificate: answer at least ${CERT_N} questions with 70% or more correct (${A.n} answered so far).`};
+  if (acc < CERT_ACC) return {ok: false, msg: `Certificate: accuracy is ${Math.round(acc * 100)}%; reach 70% to unlock it. Keep practising: your best work counts.`};
+  return {ok: true, msg: `Certificate unlocked: ${A.n} questions answered with ${Math.round(acc * 100)}% accuracy.`, acc, n: A.n};
+}
+function makeCert(){
+  const c = certState(); if (!c.ok) return;
+  const name = ST.student, d = new Date(), date = d.toLocaleDateString("en-GB", {day: "numeric", month: "long", year: "numeric"});
+  let h = 0; for (const ch of name + d.toISOString().slice(0, 10) + c.n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const id = "WWC-" + d.getFullYear() + "-" + h.toString(36).toUpperCase().padStart(7, "0").slice(-7);
+  const ops = [], hex = x => [1, 3, 5].map(i => (parseInt(x.slice(i, i + 2), 16) / 255).toFixed(3)).join(" ");
+  const W = 842, H = 595;
+  const T = (y, size, str, bold, col) => { const w = str.length * size * (bold ? 0.53 : 0.465); ops.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${hex(col || "#1f2937")} rg ${((W - w) / 2).toFixed(1)} ${y} Td (${pdfStr(str)}) Tj ET`); };
+  ops.push(`${hex("#fff7ed")} rg 0 0 ${W} ${H} re f`, `${hex("#ea580c")} rg 0 ${H - 16} ${W} 16 re f`, `${hex("#db2777")} rg 0 0 ${W} 16 re f`,
+           `${hex("#ea580c")} RG 3 w 30 34 ${W - 60} ${H - 68} re S`, `${hex("#f59e0b")} RG 1 w 40 44 ${W - 80} ${H - 88} re S`);
+  T(500, 14, "WORKING WITH CLAUDE  ·  4-WEEK COURSE", true, "#c2410c");
+  T(450, 34, "Certificate of Completion", true, "#7c2d12");
+  T(410, 13, "This certifies that", false, "#4b5563");
+  T(365, 30, name, true, "#111827");
+  T(325, 13, `has completed all ${DATA.km.nodes.filter(n => !String(n.formula).startsWith("Tool")).length} lessons of Working with Claude${DATA.sample ? " (sample edition)" : ""}`, false, "#374151");
+  T(305, 13, `and passed the adaptive assessment with ${Math.round(c.acc * 100)}% accuracy over ${c.n} questions.`, false, "#374151");
+  T(262, 11, "Prompting · Files and artifacts · Docs, Slides and Design · Projects · Skills · Memory · Research · Connectors · Responsible use", false, "#6b7280");
+  ops.push(`${hex("#9ca3af")} RG 1 w 150 150 m 330 150 l S`, `${hex("#9ca3af")} RG 1 w 512 150 m 692 150 l S`);
+  ops.push(`BT /F2 13 Tf ${hex("#111827")} rg 197 160 Td (${pdfStr("Kaushal J")}) Tj ET`, `BT /F1 10 Tf ${hex("#6b7280")} rg 176 134 Td (${pdfStr("Trainer and course designer")}) Tj ET`);
+  ops.push(`BT /F2 13 Tf ${hex("#111827")} rg ${(602 - date.length * 3.6).toFixed(1)} 160 Td (${pdfStr(date)}) Tj ET`, `BT /F1 10 Tf ${hex("#6b7280")} rg 578 134 Td (${pdfStr("Date of issue")}) Tj ET`);
+  T(80, 9, `Certificate ID ${id}  ·  Independent course; not affiliated with or endorsed by Anthropic.`, false, "#6b7280");
+  const pdf = makePDF([ops], {app: "Working with Claude certificate", name, id, date: d.toISOString(), acc: Math.round(c.acc * 100), n: c.n}).replace("/MediaBox [0 0 595 842]", `/MediaBox [0 0 ${W} ${H}]`);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([pdf], {type: "application/pdf"}));
+  a.download = `Working-with-Claude-certificate-${name.replace(/[^\w-]+/g, "_")}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+  const m = $("#ioMsg"); if (m) m.textContent = "Your certificate is saved.";
+}
+
+setTopic(DATA);
+/* Administered after Week 4: open only when every lesson quiz has been passed on this device. */
+const TT_LEFT = (() => { let p = {}; try { p = JSON.parse(localStorage.getItem("claude-course:lessons:" + (DATA.sample ? "sample" : "full")) || "{}") || {}; } catch (e) {}
+  return DATA.km.nodes.filter(n => !String(n.formula).startsWith("Tool") && !((p[n.id] || 0) >= 0.6)); })();
+if (TT_LEFT.length) { document.querySelector("nav.tabs").style.display = "none";
+  document.getElementById("view").innerHTML = `<div class="panel"><h2>The assessment opens after Week 4</h2><p>Complete every lesson first: pass each lesson quiz with 60% or more, on this device and in this browser. Then review the course mind map and come back here.</p>
+  <p><b>${TT_LEFT.length} lesson${TT_LEFT.length > 1 ? "s" : ""} to complete:</b></p><ul>${TT_LEFT.map(n => `<li><a href="${n.href}">${esc(n.formula)} · ${esc(n.name)}</a></li>`).join("")}</ul><p><a class="go" style="display:inline-block;text-decoration:none" href="index.html#/C/final">See my progress</a></p></div>`; }
+/* ===================== student app ===================== */
+const KEY = "mmp-practice:" + DATA.topic;
+let ST = {student: "", log: [], sid: 0};
+try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && Array.isArray(s.log)) ST = Object.assign(ST, s); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) {} };
+let tab = "home", SES = null, CUR = null, mapView = "az", openNode = null;
+const $ = s => document.querySelector(s);
+const model = () => replay(ST.log);
+const now = () => Date.now();
+function nodeInfo(id, R){ const m = R.M[id], s = R.S[id]; return {p: m ? m.p : null, n: m ? m.n : 0, c: m ? m.c : 0, due: s ? s.due : null, lvl: LEVEL(m ? m.p : null)}; }
+const liveFor = id => BANK.live.filter(q => q.nodes.includes(id));
+const ELIG = KM.nodes.filter(n => liveFor(n.id).length).map(n => n.id);
+
+/* ---------- Adaptive Assessment Engine ---------- */
+function score(id, R, used){
+  const i = nodeInfo(id, R), n = NODE[id]; let w = (1 - (i.p == null ? BKT.init : i.p)) * PRIW[n.pri];
+  if (i.due != null && i.due <= now()) w += .6; if (i.p == null) w += .3; if (used.has(id)) w -= 2;
+  return w + Math.random() * .15;
+}
+function reason(id, R){ const i = nodeInfo(id, R); if (i.p == null) return NODE[id].pri === "core" && KM.kind === "reagents" ? "Not tried yet · core " + UI.noun : "Not tried yet";
+  if (i.due != null && i.due <= now()) return `Due for revision · ${Math.round(i.p * 100)}% mastery`; return `${LEVELT[i.lvl]} · ${Math.round(i.p * 100)}% mastery`; }
+function pickQ(id, R, avoid){
+  const i = nodeInfo(id, R), target = i.p == null || i.p < .5 ? 1 : i.p < BKT.mastered ? 2 : 3;
+  const tries = {}; ST.log.forEach(e => tries[e.q] = (tries[e.q] || 0) + 1);
+  const c = liveFor(id).filter(q => !avoid.has(q.id));
+  if (!c.length) return null;
+  c.sort((a, b) => Math.abs(a.diff - target) - Math.abs(b.diff - target) || (tries[a.id] || 0) - (tries[b.id] || 0) || Math.random() - .5);
+  return c[0];
+}
+function startSession(mode, focus){
+  const R = model(), used = new Set(); let plan = [];
+  if (mode === "diagnostic") { const core = KM.nodes.filter(n => n.pri === "core" && ELIG.includes(n.id)); const step = Math.max(1, core.length / 12); for (let i = 0; i < Math.min(12, core.length); i++) plan.push(core[Math.floor(i * step)].id); }
+  if (mode === "revise") plan = ELIG.filter(id => { const i = nodeInfo(id, R); return i.due != null && i.due <= now(); }).sort((a, b) => R.S[a].due - R.S[b].due).slice(0, 10);
+  if (mode === "focus") plan = Array(5).fill(focus);
+  if (mode === "mistakes") { const last = {}; ST.log.forEach(e => last[e.q] = e); plan = Object.values(last).filter(e => !e.ok && QBY[e.q] && QBY[e.q].v.status !== "fail").map(e => "q:" + e.q).slice(-10); }
+  const total = mode === "adaptive" ? 10 : plan.length;
+  if (!total) { alertBox(mode === "revise" ? "Nothing is due for revision right now. Try adaptive practice." : "No earlier mistakes to review."); return; }
+  ST.sid = (ST.sid || 0) + 1; save();
+  SES = {mode, plan, total, i: 0, used, asked: new Set(), right: 0, start: {}, sid: ST.sid};
+  tab = "practice"; nextQ();
+}
+function nextQ(){
+  const R = model(); let q = null, id;
+  if (SES.i >= SES.total) { CUR = null; render(); return; }
+  if (SES.mode === "adaptive") { const c = ELIG.map(x => [x, score(x, R, SES.used)]).sort((a, b) => b[1] - a[1]); for (const [x] of c) { q = pickQ(x, R, SES.asked); if (q) { id = x; break; } } }
+  else { const p = SES.plan[SES.i]; if (p.startsWith("q:")) { q = QBY[p.slice(2)]; id = q.nodes[0]; } else { id = p; q = pickQ(p, R, SES.asked); } }
+  if (!q) { SES.total = SES.i; CUR = null; render(); return; }
+  SES.used.add(id); SES.asked.add(q.id); q.nodes.forEach(n => { if (!(n in SES.start)) SES.start[n] = nodeInfo(n, R).p; });
+  CUR = {q, opts: [...q.opts].sort(() => Math.random() - .5), t0: now(), done: false, before: Object.fromEntries(q.nodes.map(n => [n, nodeInfo(n, R).p]))};
+  render();
+}
+function answer(k){
+  if (!CUR || CUR.done) return;
+  const q = CUR.q, chosen = CUR.opts[k], ok = norm(chosen) === norm(q.ans);
+  CUR.done = true; CUR.pick = k; CUR.ok = ok; if (ok) SES.right++;
+  ST.log.push({t: now(), s: SES.sid, q: q.id, nodes: q.nodes, type: q.type, diff: q.diff, ok, chosen, correct: q.ans, ms: now() - CUR.t0, no: q.opts.length, mode: SES.mode});
+  save(); SES.i++; render();
+}
+/* ---------- views ---------- */
+function alertBox(msg){ $("#view").insertAdjacentHTML("afterbegin", `<div class="panel" style="border-color:var(--acc)">${esc(msg)}</div>`); }
+function kpis(R){
+  const ids = KM.nodes.map(n => n.id), lv = ids.map(id => nodeInfo(id, R).lvl), due = ids.filter(id => { const i = nodeInfo(id, R); return i.due != null && i.due <= now(); }).length;
+  const A = analytics(ST.log);
+  return {html: `<div class="kpis"><div class="kpi"><b>${A.n}</b><span>questions answered</span></div><div class="kpi"><b>${pct(A.ok, A.n)}%</b><span>accuracy</span></div><div class="kpi"><b>${lv.filter(l => l === "mastered").length} / ${ids.length}</b><span>${UI.nouns} mastered</span></div><div class="kpi"><b>${due}</b><span>due for revision now</span></div></div>`, lv, due};
+}
+function stackBar(lv){ const c = {mastered: 0, developing: 0, weak: 0, unseen: 0}; lv.forEach(l => c[l]++); const t = lv.length;
+  return `<div class="stack" role="img" aria-label="Mastery overview">${Object.keys(c).map(k => c[k] ? `<span style="width:${c[k] / t * 100}%;background:${LEVELC[k]}" title="${LEVELT[k]}: ${c[k]}"></span>` : "").join("")}</div>
+    <div class="legend">${Object.keys(c).map(k => `<span><i style="background:${LEVELC[k]}"></i>${LEVELT[k]} ${c[k]}</span>`).join("")}</div>`; }
+function viewHome(){
+  const R = model(), K = kpis(R), lastWrong = (() => { const l = {}; ST.log.forEach(e => l[e.q] = e); return Object.values(l).filter(e => !e.ok).length; })();
+  const rec = ELIG.map(x => [x, score(x, R, new Set()) - Math.random() * .15]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  return `<div class="panel"><h2>${ST.student ? "Welcome back, " + esc(ST.student) : "Welcome"}</h2>
+    <label class="mut">Your name (used on your results file): <input type="text" id="nm" value="${esc(ST.student)}" maxlength="40" placeholder="e.g. Asha R, XII-B"></label></div>
+    <div class="panel">${K.html}${stackBar(K.lv)}</div>
+    <div class="panel"><h2>What would you like to do?</h2><div class="acts">
+      <button class="act" style="--c:#ea580c" data-start="adaptive"><b>Adaptive practice</b><span>10 questions chosen for you: weak, due and new ${UI.nouns} first</span></button>
+      <button class="act" style="--c:#2563eb" data-start="diagnostic"><b>Diagnostic test</b><span>${UI.diag}, to find your starting level</span></button>
+      <button class="act" style="--c:#16a34a" data-start="revise" ${K.due ? "" : "disabled"}><b>Revise due ${UI.nouns} (${K.due})</b><span>Spaced repetition: bring back what you are about to forget</span></button>
+      <button class="act" style="--c:#7c3aed" data-start="mistakes" ${lastWrong ? "" : "disabled"}><b>Review my mistakes (${lastWrong})</b><span>Questions whose last answer was wrong</span></button></div></div>
+    <div class="grid2"><div class="panel"><h2>Recommended next</h2>${rec.map(([id]) => { const n = NODE[id], i = nodeInfo(id, R); return `<div class="rec"><span class="dot" style="background:${LEVELC[i.lvl]}"></span><span class="nm"><b>${esc(n.name)}</b><span class="mut">${esc(n.formula)} · ${reason(id, R)}</span></span><button data-focus="${id}">Practise</button></div>`; }).join("")}</div>
+    <div class="panel"><h2>My results</h2><p class="mut">Download a PDF of your results (scores and mastery only, no questions or answers) to send to your trainer. Your progress stays in this browser on this device.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="go" data-exp="1" ${ST.log.length ? "" : "disabled"}>Download my results (PDF)</button><button class="go" data-cert="1" ${certState().ok ? "" : "disabled"}>Download certificate (PDF)</button><button data-reset="1" ${ST.log.length ? "" : "disabled"}>Start again</button></div>
+      <p class="mut">${esc(certState().msg)}</p><p class="mut" id="ioMsg"></p></div></div>`;
+}
+function viewPractice(){
+  if (!SES) return `<div class="panel"><h2>Start a practice session</h2><p>Choose a session on the <button class="link" data-tab="home">Dashboard</button>, or start adaptive practice now.</p><button class="go" data-start="adaptive">Start adaptive practice</button></div>`;
+  if (!CUR || (CUR.done === false && SES.i >= SES.total)) {
+    const R = model(), rows = Object.keys(SES.start).map(id => [id, SES.start[id], nodeInfo(id, R).p]).sort((a, b) => (b[2] - (b[1] || BKT.init)) - (a[2] - (a[1] || BKT.init)));
+    return `<div class="panel"><h2>Session complete</h2><div class="kpis"><div class="kpi"><b>${SES.right} / ${SES.total}</b><span>correct</span></div><div class="kpi"><b>${pct(SES.right, SES.total)}%</b><span>this session</span></div></div>
+      <h2 style="margin-top:14px">How your knowledge changed</h2><div class="tw"><table><tr><th>${UI.Noun}</th><th>Before</th><th>Now</th><th>Next review</th></tr>${rows.map(([id, a, b]) => { const s = R.S[id]; return `<tr><td>${esc(NODE[id].name)}</td><td>${a == null ? "new" : Math.round(a * 100) + "%"}</td><td><b style="color:${LEVELC[LEVEL(b)]}">${Math.round(b * 100)}%</b></td><td>${s ? (s.due <= now() + 60 * 60e3 ? "today" : new Date(s.due).toLocaleDateString()) : "–"}</td></tr>`; }).join("")}</table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="go" data-start="adaptive">Another adaptive session</button><button data-tab="home">Dashboard</button><button data-tab="stats">Analytics</button></div></div>`;
+  }
+  const q = CUR.q, n = NODE[q.nodes[0]], R = model();
+  return `<div class="panel"><div class="qhead"><span>Question ${Math.min(SES.i + (CUR.done ? 0 : 1), SES.total)} of ${SES.total} · ${{adaptive: "Adaptive practice", diagnostic: "Diagnostic test", revise: "Revision", mistakes: "Mistake review", focus: "Focused practice"}[SES.mode]}</span><span>Score ${SES.right}</span></div>
+    <div class="prog"><span style="width:${(SES.i) / SES.total * 100}%"></span></div>
+    <div><span class="badge" style="background:${LC(n.L)}">${n.L}</span><span class="chip">${TYPE[q.type]}</span><span class="chip">Difficulty ${"●".repeat(q.diff)}${"○".repeat(3 - q.diff)}</span></div>
+    <div class="stem">${q.stem}</div>
+    <div class="opts">${CUR.opts.map((o, k) => `<button data-ans="${k}" ${CUR.done ? "disabled" : ""} class="${CUR.done ? (norm(o) === norm(q.ans) ? "right" : k === CUR.pick ? "wrong" : "") : ""}">${String.fromCharCode(65 + k)}. ${esc(o)}</button>`).join("")}</div>
+    ${CUR.done ? `<div class="fb"><b>${CUR.ok ? "✓ Correct." : "✗ Not quite. The answer is: " + esc(q.ans)}</b><p style="margin:6px 0">${esc(q.exp || "")}</p>
+      <div class="mut">${q.nodes.map(id => { const a = CUR.before[id], b = nodeInfo(id, R).p; return `${esc(NODE[id].name)}: ${a == null ? "new" : Math.round(a * 100) + "%"} → <span class="delta" style="color:${LEVELC[LEVEL(b)]}">${Math.round(b * 100)}%</span>`; }).join(" · ")}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="go" data-next="1">${SES.i >= SES.total ? "See session summary" : "Next question →"}</button><a class="btn" href="${nodeLink(q.nodes[0])}">${UI.openText}: ${esc(NODE[q.nodes[0]].short || NODE[q.nodes[0]].name)}</a></div></div>` : ""}</div>`;
+}
+function viewMap(){
+  const R = model(), tile = id => { const n = NODE[id], i = nodeInfo(id, R); return `<button class="tile ${i.lvl}" style="background:${LEVELC[i.lvl]}" data-node="${id}" ${ELIG.includes(id) ? "" : "disabled"} title="${esc(n.name)}: ${LEVELT[i.lvl]}"><b style="font-size:13px">${esc(n.formula)}</b><small>${esc(n.name)}</small><small>${i.p == null ? "Not tried" : Math.round(i.p * 100) + "% · " + i.c + "/" + i.n}</small></button>`; };
+  let body = "";
+  if (mapView === "az") LETTERS.forEach(L => { body += `<div class="lh" style="color:${LC(L)}">${esc(KM.groupNames ? KM.groupNames[L] || L : L)}</div><div class="tiles">${KM.nodes.filter(n => n.L === L).map(n => tile(n.id)).join("")}</div>`; });
+  else Object.entries(KM.roles).sort((a, b) => a[1].localeCompare(b[1])).forEach(([k, t]) => { const ns = KM.nodes.filter(n => n.roles.includes(k)); if (ns.length) body += `<div class="lh">${esc(t)}</div><div class="tiles">${ns.map(n => tile(n.id)).join("")}</div>`; });
+  let det = "";
+  if (openNode) { const n = NODE[openNode], i = nodeInfo(openNode, R);
+    det = `<div class="panel" id="det" style="border-left:5px solid ${LEVELC[i.lvl]}"><h2>${KM.kind === "reagents" ? esc(n.name) + " · " + esc(n.formula) : esc(n.formula) + " · " + esc(n.name)}</h2><p class="mut">${LEVELT[i.lvl]}${i.p == null ? "" : ` · mastery ${Math.round(i.p * 100)}% · ${i.c} of ${i.n} correct · next review ${i.due <= now() ? "now" : new Date(i.due).toLocaleDateString()}`} · ${liveFor(openNode).length} questions in the bank</p>
+      ${KM.kind === "reagents" ? `<div class="tw"><table><tr><th>Starting material</th><th>Product</th></tr>${n.uses.map(u => `<tr><td>${esc(u[0])}</td><td><b>${esc(u[1])}</b></td></tr>`).join("")}</table></div>` : (n.topics.length ? `<div class="mut" style="margin:4px 0">Key concepts:</div><div>${n.topics.map(t => `<span class="chip">${esc(t[0])}</span>`).join("")}</div>` : `<div class="mut">${n.viva.length} viva questions${n.sorts.length ? " and " + n.sorts.length + " sorting activit" + (n.sorts.length > 1 ? "ies" : "y") : ""}.</div>`)}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="go" data-focus="${openNode}">Practise this ${UI.noun} (5 questions)</button><a class="btn" href="${nodeLink(openNode)}">${UI.openText}</a></div></div>`; }
+  return det + `<div class="panel"><h2>My knowledge map</h2><p class="mut">Every ${UI.noun} is a node. Colour shows how well you know it, estimated from all your answers. Tap a ${UI.noun} to see details or practise it.</p>
+    ${KM.kind === "reagents" ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><button class="${mapView === "az" ? "on" : ""}" data-mv="az">A–Z</button><button class="${mapView === "job" ? "on" : ""}" data-mv="job">By job</button></div>` : ""}
+    ${stackBar(KM.nodes.map(n => nodeInfo(n.id, R).lvl))}${body}</div>`;
+}
+function viewStats(){
+  const A = analytics(ST.log);
+  if (!A.n) return `<div class="panel"><h2>Analytics</h2><p>Answer a few questions and your analytics will appear here.</p><button class="go" data-start="diagnostic">Take the diagnostic test</button></div>`;
+  const qs = {}; ST.log.forEach(e => { qs[e.q] = qs[e.q] || [0, 0]; qs[e.q][1]++; if (e.ok) qs[e.q][0]++; });
+  const hard = Object.entries(qs).filter(([, v]) => v[0] < v[1]).sort((a, b) => (a[1][0] / a[1][1]) - (b[1][0] / b[1][1]) || b[1][1] - a[1][1]).slice(0, 8);
+  return `<div class="panel"><h2>Overview</h2><div class="kpis"><div class="kpi"><b>${A.n}</b><span>answers</span></div><div class="kpi"><b>${pct(A.ok, A.n)}%</b><span>accuracy</span></div><div class="kpi"><b>${(A.ms / 1000).toFixed(1)} s</b><span>average time per question</span></div><div class="kpi"><b>${A.sessions.length}</b><span>sessions</span></div></div></div>
+    <div class="grid2"><div class="panel"><h2>Accuracy by job</h2>${bars(A.byRole, k => KM.roles[k], "#0d9488")}</div><div class="panel"><h2>Accuracy by question type</h2>${bars(A.byType, k => TYPE[k], "#7c3aed")}</div>
+    <div class="panel"><h2>Accuracy by difficulty</h2>${bars(A.byDiff, k => ["", "Easy ●○○", "Medium ●●○", "Hard ●●●"][k], "#2563eb")}</div><div class="panel"><h2>Accuracy per session</h2>${lineSvg(A.sessions.map(s => pct(s[0], s[1])), 420, 170)}</div></div>
+    <div class="grid2"><div class="panel"><h2>What I confuse</h2>${A.conf.length ? `<div class="tw"><table><tr><th>Correct answer ⟵ what I chose</th><th>Times</th></tr>${A.conf.slice(0, 8).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join("")}</table></div>` : `<p class="mut">No mistakes yet.</p>`}</div>
+    <div class="panel"><h2>Questions I find hardest</h2>${hard.length ? `<div class="tw"><table><tr><th>Question</th><th>Right</th></tr>${hard.map(([id, v]) => `<tr><td>${QBY[id] ? QBY[id].stem.replace(/<[^>]+>/g, "") : id}</td><td>${v[0]}/${v[1]}</td></tr>`).join("")}</table></div>` : `<p class="mut">Nothing yet.</p>`}</div></div>`;
+}
+function viewHow(){
+  const C = BANK.counts, fails = BANK.all.filter(q => q.v.status === "fail"), warns = BANK.all.filter(q => q.v.status === "warn"), byT = {}; BANK.live.forEach(q => byT[q.type] = (byT[q.type] || 0) + 1);
+  const L = (c, t, d) => `<div class="layer" style="--c:${c}"><b>${t}</b><div>${d}</div></div>`;
+  return `<div class="panel"><h2>How MMP Practice works</h2><p class="mut">Everything runs inside this page, on your device. No account and no internet are needed after the page has loaded.</p>
+    ${L("#ea580c", "1. Knowledge map", UI.kmText)}
+    ${L("#2563eb", "2. Question bank", `${BANK.live.length} live questions: ${C.authored} written and reviewed by hand (concept questions), ${C.generated} generated from the knowledge map. ${Object.entries(byT).map(([k, v]) => `${TYPE[k]}: ${v}`).join(" · ")}.`)}
+    ${L("#7c3aed", "3. Question generator", UI.genText)}
+    ${L("#16a34a", "4. Validation engine", `Every question is checked before it can be shown: one correct answer, no repeated options, a real knowledge-map node, and that no wrong option is also correct according to the knowledge map. Passed: ${C.pass} · passed with a note: ${C.warn} · rejected: ${C.fail}.${fails.length ? `<details style="margin-top:6px"><summary>Rejected questions (${fails.length})</summary><ul>${fails.slice(0, 30).map(q => `<li>${q.stem.replace(/<[^>]+>/g, "")} <span class="mut">(${esc(q.v.fail.join("; "))})</span></li>`).join("")}</ul></details>` : ""}`)}
+    ${L("#0891b2", "5. Student knowledge model", `Bayesian Knowledge Tracing: each ${UI.noun} has a mastery probability that starts at ${BKT.init * 100}% and is updated after every answer, allowing for lucky guesses (1 in the number of options) and slips (${BKT.slip * 100}%). ${BKT.mastered * 100}% or more = mastered (about three correct answers in a row).`)}
+    ${L("#db2777", "6. Adaptive assessment engine", `Chooses the next ${UI.noun} by low mastery, due revision and new material${KM.kind === "reagents" ? " (core reagents first)" : ""}, then picks a question at the right difficulty: easy below 50% mastery, medium up to 85%, hard above.`)}
+    ${L("#b45309", "7. Response analytics", "Every answer is logged with the time taken and the option you chose, giving accuracy by job, difficulty and type, your confusions and your trend over sessions.")}
+    ${L("#4f46e5", "8. Revision engine", `Spaced repetition: a correct answer moves the ${UI.noun} to a longer review gap (1, 2, 4, 8, 16 days); a wrong answer brings it back the same day.`)}
+    ${L("#65a30d", "9. Student dashboard", `Your mastery overview, recommended next ${UI.nouns}, sessions, and a PDF report for your teacher.`)}</div>`;
+}
+function render(){
+  document.querySelectorAll("[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  $("#view").innerHTML = {home: viewHome, practice: viewPractice, map: viewMap, stats: viewStats, how: viewHow}[tab]();
+  const nm = $("#nm"); if (nm) nm.onchange = () => { ST.student = nm.value.trim(); save(); render(); };
+}
+function exportFile(){
+  const R = model(), A = analytics(ST.log), now0 = new Date(), name = ST.student || "Student";
+  const payload = {app: "MMP Practice", version: 1, topic: DATA.topic, edition: DATA.sample ? "sample" : "full", student: name, exported: now0.toISOString(), log: ST.log.map(e => { const q = QBY[e.q], o = Object.assign({}, e); delete o.chosen; delete o.correct; o.ci = q ? q.opts.findIndex(x => norm(x) === norm(e.chosen)) : -1; return o; }),
+    summary: Object.fromEntries(Object.entries(R.M).map(([k, v]) => [k, Math.round(v.p * 100)]))};
+  const pages = []; let ops = [], y = 0;
+  const hex = c => [1, 3, 5].map(i => (parseInt(c.slice(i, i + 2), 16) / 255).toFixed(3)).join(" ");
+  const T = (x, yy, size, str, bold, col) => ops.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${hex(col || "#1f2937")} rg ${x} ${yy} Td (${pdfStr(str)}) Tj ET`);
+  const Rc = (x, yy, w, h, col) => ops.push(`${hex(col)} rg ${x} ${yy} ${w} ${h} re f`);
+  const page = () => { if (ops.length) pages.push(ops); ops = []; y = 780; Rc(0, 812, 595, 30, "#ea580c"); T(40, 822, 12, "Results · Adaptive Assessment · " + UI.title, true, "#ffffff"); };
+  const need = h => { if (y - h < 60) page(); };
+  const foot = () => pages.forEach((o, i) => o.push(`BT /F1 8 Tf 0.45 0.45 0.45 rg 40 30 Td (${pdfStr(`Working with Claude · Original instructional design & content by Kaushal J · ${UI.title} · page ${i + 1} of ${pages.length}`)}) Tj ET`));
+  page();
+  T(40, y, 20, name, true); y -= 18; T(40, y, 10, `Report created ${now0.toLocaleDateString("en-IN", {day: "numeric", month: "long", year: "numeric"})} · ${DATA.sample ? "Sample edition" : "Full edition"}`, false, "#6b7280"); y -= 30;
+  const lv = KM.nodes.map(n => LEVEL(R.M[n.id] ? R.M[n.id].p : null)), cnt = k => lv.filter(l => l === k).length;
+  [[A.n, "questions answered"], [pct(A.ok, A.n) + "%", "accuracy"], [`${cnt("mastered")} / ${KM.nodes.length}`, UI.nouns + " mastered"], [A.sessions.length, "sessions"]].forEach(([v, l], i) => {
+    const x = 40 + i * 130; Rc(x, y - 30, 120, 44, "#fff1e2"); T(x + 8, y - 4, 16, v, true, "#c2410c"); T(x + 8, y - 22, 8, l, false, "#6b7280"); });
+  y -= 60;
+  [["mastered", "Mastered"], ["developing", "Developing"], ["weak", "Weak"], ["unseen", "Not tried"]].forEach(([k, l], i) => { Rc(40 + i * 110, y, 9, 9, LEVELC[k]); T(54 + i * 110, y + 1, 9, `${l}: ${cnt(k)}`); });
+  y -= 28;
+  const due = KM.nodes.filter(n => R.S[n.id] && R.S[n.id].due <= Date.now()).map(n => n.id);
+  const next = KM.nodes.map(n => [n, R.M[n.id] ? R.M[n.id].p : null]).filter(([n]) => R.M[n.id]).sort((a, b) => a[1] - b[1]).slice(0, 5);
+  T(40, y, 13, "Revise next", true, "#c2410c"); y -= 16;
+  if (!next.length) { T(40, y, 10, "Answer some questions first."); y -= 14; }
+  next.forEach(([n, p]) => { T(48, y, 10, fit(`• ${n.formula} · ${n.name}`, 10, 420)); T(480, y, 10, `${Math.round(p * 100)}%${due.includes(n.id) ? " · due" : ""}`, true, LEVELC[LEVEL(p)]); y -= 14; });
+  y -= 14; need(60);
+  T(40, y, 13, `Mastery of every ${UI.noun}`, true, "#c2410c"); y -= 18;
+  let group = null;
+  KM.nodes.forEach(n => {
+    const m = R.M[n.id], p = m ? m.p : null;
+    if (n.L !== group) { need(34); group = n.L; T(40, y, 10, (KM.groupNames && KM.groupNames[group]) || (KM.kind === "reagents" ? "Letter " + group : group), true, "#374151"); y -= 14; }
+    need(14);
+    T(48, y, 9, fit(`${n.formula} · ${n.name}`, 9, 300)); Rc(360, y - 1, 120, 8, "#e5e7eb"); if (p != null) Rc(360, y - 1, 120 * p, 8, LEVELC[LEVEL(p)]);
+    T(488, y, 9, p == null ? "not tried" : `${Math.round(p * 100)}%  (${m.c}/${m.n})`, p != null, p == null ? "#9ca3af" : "#1f2937"); y -= 13;
+  });
+  y -= 12; need(40);
+  T(40, y, 13, "Accuracy by question type", true, "#c2410c"); y -= 16;
+  Object.entries(A.byType).forEach(([k, v]) => { need(14); T(48, y, 10, TYPE[k] || k); T(300, y, 10, `${pct(v[0], v[1])}%  (${v[0]} of ${v[1]})`, true); y -= 14; });
+  y -= 10; need(30);
+  T(40, y, 9, "Send this PDF to your trainer. The Trainer View reads the results stored inside it (no questions or answers are included).", false, "#6b7280");
+  pages.push(ops); foot();
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([makePDF(pages, payload)], {type: "application/pdf"}));
+  a.download = `Working-with-Claude-results-${name.replace(/[^\w-]+/g, "_")}-${DATA.topic}-${now0.toISOString().slice(0, 10)}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+  const msg = $("#ioMsg"); if (msg) msg.textContent = "Your results PDF is saved. Send it to your trainer.";
+}
+if (false) $("#imp").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { const d = readResults(t); if (!d || !Array.isArray(d.log) || d.topic !== DATA.topic) throw 0;
+    const k = new Set(ST.log.map(x => x.t + x.q)); d.log.forEach(x => { if (!k.has(x.t + x.q)) ST.log.push(x); }); ST.log.sort((a, b) => a.t - b.t); if (!ST.student) ST.student = d.student || ""; ST.sid = Math.max(ST.sid || 0, ...ST.log.map(x => x.s || 0)); save(); render(); const m = $("#ioMsg"); if (m) m.textContent = `Imported ${d.log.length} answers.`; })
+  .catch(() => { const m = $("#ioMsg"); if (m) m.textContent = "That file is not a results file for this assessment."; }); e.target.value = ""; };
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]"), s = e.target.closest("[data-start]"), f = e.target.closest("[data-focus]"), a = e.target.closest("[data-ans]"), nd = e.target.closest("[data-node]"), mv = e.target.closest("[data-mv]");
+  if (t) { tab = t.dataset.tab; render(); }
+  else if (s && !s.disabled) startSession(s.dataset.start);
+  else if (f) startSession("focus", f.dataset.focus);
+  else if (a && !a.disabled) answer(+a.dataset.ans);
+  else if (e.target.closest("[data-next]")) nextQ();
+  else if (nd && !nd.disabled) { openNode = nd.dataset.node; render(); window.scrollTo({top: 0, behavior: "smooth"}); }
+  else if (mv) { mapView = mv.dataset.mv; render(); }
+  else if (e.target.closest("[data-exp]")) exportFile(); else if (e.target.closest("[data-cert]")) makeCert();
+  
+  else if (e.target.closest("[data-reset]")) { if (e.target.closest("[data-reset]").dataset.sure) { ST = {student: ST.student, log: [], sid: 0}; save(); SES = null; render(); } else { const b = e.target.closest("[data-reset]"); b.dataset.sure = 1; b.textContent = "Tap again to erase all progress"; } }
+});
+document.addEventListener("keydown", e => { if (tab === "practice" && CUR && !CUR.done && /^[1-4a-d]$/i.test(e.key) && !e.target.closest("input")) { const k = isNaN(+e.key) ? e.key.toLowerCase().charCodeAt(0) - 97 : +e.key - 1; if (k < CUR.opts.length) answer(k); } });
+if (!TT_LEFT.length) render();
+</script>
+<script src="guard.js"></script>
+<script src="footer.js"></script>
+</body>
+</html>
