@@ -46,8 +46,4 @@ Progress is stored only in the participant's own browser on their device.
 
 This sample edition is licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/): share it unchanged, with credit, for non-commercial use. The full edition remains all rights reserved. See [LICENSE](LICENSE).
 
-## Publish on GitHub Pages
 
-1. Create the repository (public) and upload every file in this folder to the root.
-2. Settings → Pages → Build and deployment → **Deploy from a branch** → branch `main`, folder `/ (root)` → Save.
-3. After a minute the site is at `https://git-kaushal.github.io/<Claude-AI-Learning>/`.
